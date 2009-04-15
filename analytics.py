@@ -10,8 +10,8 @@ connection = Connection()
 db = connection["analytics_sample"]
 db.drop_collection( "my_analytics" )
 
-db.my_analytics.update( { "page" : "/" } , { "$inc" : { "count" : 1 } } , upsert=True )
-db.my_analytics.update( { "page" : "/" } , { "$inc" : { "count" : 1 } } , upsert=True )
+db.my_analytics.update( { "time" : now() , "page" : "/" } , { "$inc" : { "count" : 1 } } , upsert=True )
+db.my_analytics.update( { "time" : now() , "page" : "/" } , { "$inc" : { "count" : 1 } } , upsert=True )
 
 print( db.my_analytics.find_one() )
 print( db.my_analytics.count() )
