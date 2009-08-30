@@ -1,6 +1,8 @@
 /*
 Example of using MongoDB auto-sharding.
 
+Note: This example works with MongoDB v1.1+.  Some command names have changed from <1.1.
+
 First start the three servers (we use the first shard server as the config db, dual duty, in this example):
 
 mkdir /data/db/a
@@ -37,11 +39,11 @@ print( "the 'test' database info from config.databases:\n" + tojson( config.data
 // now let create a table called data and puts lots of data in it
 // first, lets tell the system that we want to shard it
 
-// first step is to turn on partition for the datbase:
-print( "partition result : " + tojson( admin.runCommand( { partition : "test" } ) ) );
+// first step is to turn on partitioning for the database:
+print( "partition result : " + tojson( admin.runCommand( { enablesharding : "test" } ) ) );
 
 // then we can shard the data collection on 'num'
-print( "shard result : " + tojson( admin.runCommand( { shard : "test.data" , key : { num : 1 } } ) ) );
+print( "shard result : " + tojson( admin.runCommand( { shardcollection : "test.data" , key : { num : 1 } } ) ) );
 
 // we want a lot of data, so lets make a 50k string to cheat :)
 bigString = "";
