@@ -13,7 +13,9 @@ def compute_diff( slaveHost="localhost" , port=27017 ):
     lastSyncedSeconds = source["syncedTo"][1]
     print( source )
 
-    (host, port) = source["host"].split(":")
+    components = source["host"].split(":")
+    host = components[0]
+    port = len(components) > 1 and components[1] or "27017"
     master = Connection(host, int(port))
 
     oplog = master["local"]["oplog.$main"]
