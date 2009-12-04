@@ -8,18 +8,19 @@ import sys
 
 def compute_diff( slaveHost="localhost" , port=27017 ):
     slave = Connection( slaveHost , port , slave_okay=True )
-    
+
     source = slave["local"]["sources"].find_one()
     lastSyncedSeconds = source["syncedTo"][1]
     print( source )
 
-    master = Connection( source["host"] )
-    
+    (host, port) = source["host"].split(":")
+    master = Connection(host, int(port))
+
     oplog = master["local"]["oplog.$main"]
     lastOp = oplog.find().limit(1).sort( "ts" , DESCENDING )[0]
     lastOpSeconds = lastOp["ts"][1]
     print( lastOp )
-    
+
     diffSeconds = lastOpSeconds - lastSyncedSeconds
     print( "slave is behind by: %s seconds" % diffSeconds )
 
