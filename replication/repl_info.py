@@ -4,19 +4,18 @@
 from pymongo.connection import Connection
 from pymongo import ASCENDING, DESCENDING
 
-master = Connection( "localhost" , 27017 )
 slave = Connection( "localhost" , 9999 , slave_okay=True )
+
+source = slave["local"]["sources"].find_one()
+lastSyncedSeconds = source["syncedTo"][1]
+print( source )
+
+master = Connection( source["host"] )
 
 oplog = master["local"]["oplog.$main"]
 lastOp = oplog.find().limit(1).sort( "ts" , DESCENDING )[0]
 lastOpSeconds = lastOp["ts"][1]
-#print( lastOp )
-#print( lastOpSeconds )
-
-source = slave["local"]["sources"].find_one()
-lastSyncedSeconds = source["syncedTo"][1]
-#print( source )
-#print( lastSyncedSeconds )
+print( lastOp )
 
 diffSeconds = lastOpSeconds - lastSyncedSeconds
 print( "slave is behind by: %s seconds" % diffSeconds )
