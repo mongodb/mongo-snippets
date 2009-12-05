@@ -27,8 +27,8 @@ config = db.getSisterDB( "config" );
 admin = db.getSisterDB( "admin" ); 
 
 // tell the shard system about the 2 servers
-admin.runCommand( { addshard : "localhost:9998" } );
-admin.runCommand( { addshard : "localhost:9999" } );
+printjson( admin.runCommand( { addshard : "localhost:9998" , allowLocal : true } ) )
+printjson( admin.runCommand( { addshard : "localhost:9999" , allowLocal : true } ) )
 
 // try to use the database normally
 db.people.save( { name : "eliot" , email : "someone@foo.com" } )
@@ -60,8 +60,8 @@ for ( ; num<100; num++ ){
 
 // lets verify we have 100 things:
 print( "should have 100 things, do we: " + db.data.find().toArray().length );
-print( "what does the shard info look like: \n" + tojson(config.shard.find().toArray()) );
-print( "we only have one shard, right: " + config.shard.find().length() );
+print( "what does the shard info look like: \n" + tojson(config.chunks.find().toArray()) );
+print( "we only have one shard, right: " + config.chunks.find().length() );
 
 // now lets put a lot more data in
 print( "loading lots of data in" );
@@ -69,5 +69,5 @@ for ( ; num<5000; num++ ){
     db.data.save( { num : num , bigString : bigString } );
 }
 
-print( "now we have " + config.shard.find().length() + " shards! " );
-print( "lets look at them : " + tojson(config.shard.find().toArray()) );
+print( "now we have " + config.chunks.find().length() + " shards! " );
+print( "lets look at them : " + tojson(config.chunks.find().toArray()) );
