@@ -16,7 +16,7 @@ print "test database info %r" % config.databases.find_one({"name": "test"})
 print "partition result: %r" % admin._command({"partition": "test"})
 print "shard result: %r" % admin._command({"shard": "test.data", "key": {"num": 1}})
 
-big_string = "this is 10" * 5000 # 50k string
+big_string = "this is 10" * 20000 # 200k string
 
 for i in range(100):
     db.data.save({"num": i, "bigString": big_string})

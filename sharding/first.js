@@ -45,9 +45,9 @@ print( "partition result : " + tojson( admin.runCommand( { enablesharding : "tes
 // then we can shard the data collection on 'num'
 print( "shard result : " + tojson( admin.runCommand( { shardcollection : "test.data" , key : { num : 1 } } ) ) );
 
-// we want a lot of data, so lets make a 50k string to cheat :)
+// we want a lot of data, so lets make a 200k string to cheat :)
 bigString = "";
-while ( bigString.length < 50000 )
+while ( bigString.length < 200000 )
     bigString += "this is a big string. ";
 
 print( "my big string is: " + bigString.length + " characters long" );
