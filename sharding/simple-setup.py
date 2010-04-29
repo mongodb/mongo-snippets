@@ -14,6 +14,8 @@ from time import sleep
 
 # BEGIN CONFIGURATION
 
+# some settings can also be set on command line. start with --help to see options
+
 BASE_DATA_PATH='/data/db/sharding/' #warning: gets wiped every time you run this
 MONGO_PATH=os.getenv( "MONGO_HOME" , os.path.expanduser('~/10gen/mongo/') )
 print( "MONGO_PATH: " + MONGO_PATH )
@@ -32,26 +34,35 @@ MONGOS_COLOR=32 #green
 MONGOD_COLOR=36 #cyan
 BOLD=True
 
-TEST_FOO_SHARD_KEY = "_id";
+# defaults -- can change on command line
+COLLECTION_KEYS = {'foo' : '_id', 'bar': 'key'}
 
 for x in sys.argv[1:]:
-    opt = x.split("=")
-    if len(opt) != 2:
+    opt = x.split("=", 1)
+    if opt[0] != '--help' and len(opt) != 2:
         raise Exception("bad arg: " + x )
     
-    if opt[0] == "chunkSize":
-        CHUNK_SIZE = int(opt[1])
-    elif opt[0] == "foo":
-        TEST_FOO_SHARD_KEY = opt[1]
+    if opt[0].startswith('--'):
+        opt[0] = opt[0][2:].lower()
+        if opt[0] == 'help':
+            print sys.argv[0], '[--help] [--chunksize=200] [--port=27017] [collection=key]'
+            sys.exit()
+        elif opt[0] == 'chunksize':
+            CHUNK_SIZE = int(opt[1])
+        elif opt[0] == 'port':
+            MONGOS_PORT = int(opt[1])
+        else:
+            raise( Exception("unknown option: " + opt[0] ) )
     else:
-        raise( Exception("unknown arg: " + opt[0] ) )
+        COLLECTION_KEYS[opt[0]] = opt[1]
 
 def AFTER_SETUP():
     # feel free to change any of this
     # admin and conn are both defined globaly
     admin.command('enablesharding', 'test')
 
-    admin.command('shardcollection', 'test.foo', key={ TEST_FOO_SHARD_KEY : 1 })
+    for (collection, key) in COLLECTION_KEYS.iteritems():
+        admin.command('shardcollection', 'test.'+collection, key={ key : 1 })
 
     admin.command('shardcollection', 'test.fs.files', key={'_id':1})
     admin.command('shardcollection', 'test.fs.chunks', key={'files_id':1})
