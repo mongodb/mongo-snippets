@@ -37,6 +37,20 @@ BOLD=True
 # defaults -- can change on command line
 COLLECTION_KEYS = {'foo' : '_id', 'bar': 'key'}
 
+def AFTER_SETUP():
+    # feel free to change any of this
+    # admin and conn are both defined globaly
+    admin.command('enablesharding', 'test')
+
+    for (collection, key) in COLLECTION_KEYS.iteritems():
+        admin.command('shardcollection', 'test.'+collection, key={ key : 1 })
+
+    admin.command('shardcollection', 'test.fs.files', key={'_id':1})
+    admin.command('shardcollection', 'test.fs.chunks', key={'files_id':1})
+
+
+# END CONFIGURATION
+
 for x in sys.argv[1:]:
     opt = x.split("=", 1)
     if opt[0] != '--help' and len(opt) != 2:
@@ -55,20 +69,6 @@ for x in sys.argv[1:]:
             raise( Exception("unknown option: " + opt[0] ) )
     else:
         COLLECTION_KEYS[opt[0]] = opt[1]
-
-def AFTER_SETUP():
-    # feel free to change any of this
-    # admin and conn are both defined globaly
-    admin.command('enablesharding', 'test')
-
-    for (collection, key) in COLLECTION_KEYS.iteritems():
-        admin.command('shardcollection', 'test.'+collection, key={ key : 1 })
-
-    admin.command('shardcollection', 'test.fs.files', key={'_id':1})
-    admin.command('shardcollection', 'test.fs.chunks', key={'files_id':1})
-
-
-# END CONFIGURATION
 
 # fixed "colors"
 RESET = 0
