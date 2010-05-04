@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "js", "js.vcxproj", "{170C80B7-2E36-4F82-AA02-68FAA3525BEF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jskwgen", "jskwgen\jskwgen.vcxproj", "{26CB6240-256F-4AAA-A24E-B2D461D14D67}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DC7B6AD6-F76E-4E34-876C-E426A06E3E52}"
+	ProjectSection(SolutionItems) = preProject
+		readme_building_spidermonkey.txt = readme_building_spidermonkey.txt
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Debug|Win32.Build.0 = Debug|Win32
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Debug|x64.ActiveCfg = Debug|x64
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Debug|x64.Build.0 = Debug|x64
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Release|Win32.ActiveCfg = Release|Win32
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Release|Win32.Build.0 = Release|Win32
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Release|x64.ActiveCfg = Release|x64
+		{170C80B7-2E36-4F82-AA02-68FAA3525BEF}.Release|x64.Build.0 = Release|x64
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Debug|Win32.ActiveCfg = Debug|Win32
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Debug|Win32.Build.0 = Debug|Win32
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Debug|x64.ActiveCfg = Debug|Win32
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Release|Win32.ActiveCfg = Release|Win32
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Release|Win32.Build.0 = Release|Win32
+		{26CB6240-256F-4AAA-A24E-B2D461D14D67}.Release|x64.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
