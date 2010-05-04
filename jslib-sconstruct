@@ -1,3 +1,8 @@
+# -*- mode: python; -*-
+# scons file to build spidermonkey
+# experimental
+#
+
 import os
 import subprocess
 
@@ -44,22 +49,39 @@ coreFiles = [ "jsapi.c" ,
               "jsxml.c" ,
               "prmjtime.c" ]
 
+
 force64 = GetOption( "force64" ) is not None
 
 msarch = None
 if force64:
     msarch = "amd64"
 
+
 env = Environment( MSVS_ARCH=msarch )
 nix = False
 
+
 def findVersion( root , choices ):
-    for c in choices:
-        if ( os.path.exists( root + c ) ):
-            return root + c
-    raise "can't find a version of [" + root + "] choices: " + choices
+    if not isinstance(root, list):
+        root = [root]
+    for r in root:
+        for c in choices:
+            if ( os.path.exists( r + c ) ):
+                return r + c
+    raise RuntimeError("can't find a version of [" + repr(root) + "] choices: " + repr(choices))
+
 
 if "win32" == os.sys.platform:
+
+    for pathdir in env['ENV']['PATH'].split(os.pathsep):
+	if os.path.exists(os.path.join(pathdir, 'cl.exe')):
+            print( "found visual studio at " + pathdir )
+	    break
+    else:
+	#use current environment
+        print "using current environment (PATH etc.) settings"
+        #print os.environ
+	env['ENV'] = dict(os.environ)
     
     if force64:
         env.Append( CPPDEFINES=["_AMD64_=1"] )
@@ -68,10 +90,9 @@ if "win32" == os.sys.platform:
 
     env.Append( CPPFLAGS= " /nologo /MT /W3 /Gm /EHsc /Zi /Od /Fp " )
     env.Append( CPPDEFINES=[ "_WINDOWS" , "WIN32" , "XP_WIN" ] )
-
     
-    winSDKHome = findVersion( "C:/Program Files/Microsoft SDKs/Windows/" ,
-                              [ "v6.0" , "v6.0a" , "v6.1" ] )
+    winSDKHome = findVersion( [ "C:/Program Files/Microsoft SDKs/Windows/", "C:/Program Files (x86)/Microsoft SDKs/Windows/" ] ,
+                              [ "v6.0" , "v6.0a" , "v6.1", "v7.0A" ] )
 
     env.Append( CPPPATH=[ winSDKHome + "/Include" ] )
     if force64:
@@ -79,9 +100,9 @@ if "win32" == os.sys.platform:
     else:
         env.Append( LIBPATH=[ winSDKHome + "/Lib" ] )
 
-
 elif "darwin" == os.sys.platform:
     nix = True
+
 elif "sunos5" == os.sys.platform:
     nix = True
 
@@ -97,8 +118,10 @@ elif "sunos5" == os.sys.platform:
 
 elif "freebsd7" == os.sys.platform:
     nix = True
+
 elif "linux2" == os.sys.platform:
     nix = True
+
 else:
     print( "unknown platform: " + os.sys.platform )
     Exit(-1)
