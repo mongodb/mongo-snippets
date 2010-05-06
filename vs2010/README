@@ -1,1 +1,3 @@
 js.sln is for building spidermonkey in visual studio 2010
+
+jskwgen/jskgen.vxproj will generate the jstypes.h file.
