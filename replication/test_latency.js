@@ -11,7 +11,10 @@
 */
 
 slave = db;
-assert(!slave.runCommand("ismaster").ismaster);
+if (slave.runCommand("ismaster").ismaster) {
+    print("db from command line should be the slave -- and it isn't -- see comments in this .js file. exiting");
+    quit();
+}
 print("slave ok");
 
 master = new Mongo("localhost").getDB("test");
@@ -43,7 +46,7 @@ function latencytest() {
         slaveobj = t.findOne();
         if (slaveobj && slaveobj.y == obj.y)
             break;
-        sleep(2); // wait 2 ms
+        sleep(1);
     }
 }
 
@@ -55,8 +58,8 @@ function run() {
 }
 
 print();
-print("try running:");
-print(" ptime( function(){T.findOne()} )");
-print(" ptime( function(){t.findOne()} )");
-print(" run()");
+print("try running these:");
+print(" ptime( function(){T.findOne()} ) // should be quick as hits only 1 server");
+print(" ptime( function(){t.findOne()} ) // should be quick");
+print(" run() // takes a little time awaits full replication");
 print();

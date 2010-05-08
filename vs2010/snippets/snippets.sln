@@ -1,0 +1,15 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "replication", "replication", "{96D6995D-DBFC-4EBD-92F5-D9812F9C5B09}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\replication\misc.js = ..\..\replication\misc.js
+		..\..\replication\test_latency.js = ..\..\replication\test_latency.js
+		..\..\replication\tl.bat = ..\..\replication\tl.bat
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
