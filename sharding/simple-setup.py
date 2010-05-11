@@ -6,7 +6,7 @@ import shutil
 import pymongo
 import atexit
 
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import error, socket, AF_INET, SOCK_STREAM
 from select import select
 from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
@@ -112,7 +112,7 @@ def waitfor(proc, port):
             try:
                 s.connect(('localhost', port))
                 return
-            except IOError:
+            except (IOError, error):
                 sleep(0.25)
         finally:
             s.close()
