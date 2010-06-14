@@ -28,6 +28,11 @@ CONFIG_ARGS=[]
 MONGOS_ARGS=[]
 MONGOD_ARGS=[]
 
+# Note this reports a lot of false positives.
+USE_VALGRIND=False
+VALGRIND_ARGS=["valgrind", "--log-file=/tmp/mongos-%p.valgrind", "--leak-check=yes", 
+               ("--suppressions="+MONGO_PATH+"valgrind.suppressions"), "--"]
+
 # see http://pueblo.sourceforge.net/doc/manual/ansi_color_codes.html
 CONFIG_COLOR=31 #red
 MONGOS_COLOR=32 #green
@@ -65,10 +70,15 @@ for x in sys.argv[1:]:
             CHUNK_SIZE = int(opt[1])
         elif opt[0] == 'port':
             MONGOS_PORT = int(opt[1])
+        elif opt[0] == 'usevalgrind': #intentionally not in --help
+            USE_VALGRIND = int(opt[1])
         else:
             raise( Exception("unknown option: " + opt[0] ) )
     else:
         COLLECTION_KEYS[opt[0]] = opt[1]
+
+if not USE_VALGRIND:
+    VALGRIND_OPTS = []
 
 # fixed "colors"
 RESET = 0
@@ -176,10 +186,10 @@ for i in range(1, N_SHARDS+1):
 for config_str in configs:
     host, port = config_str.split(':')
     config = pymongo.Connection(host, int(port)).config
-    config.settings.save({'_id':'chunksize', 'value':CHUNK_SIZE})
+    config.settings.save({'_id':'chunksize', 'value':CHUNK_SIZE}, safe=True)
 del config #don't leave around connection directly to config server
 
-router = Popen([mongos, '--port', str(MONGOS_PORT), '--configdb' , ','.join(configs)] + MONGOS_ARGS,
+router = Popen(VALGRIND_ARGS + [mongos, '--port', str(MONGOS_PORT), '--configdb' , ','.join(configs)] + MONGOS_ARGS,
                stdin=devnull, stdout=PIPE, stderr=STDOUT)
 router.prefix = ascolor(MONGOS_COLOR, 'S' + str(1)) + ':'
 fds[router.stdout] = router
