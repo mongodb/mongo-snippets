@@ -78,7 +78,7 @@ for x in sys.argv[1:]:
         COLLECTION_KEYS[opt[0]] = opt[1]
 
 if not USE_VALGRIND:
-    VALGRIND_OPTS = []
+    VALGRIND_ARGS = []
 
 # fixed "colors"
 RESET = 0
