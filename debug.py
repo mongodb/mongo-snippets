@@ -8,26 +8,57 @@ import sys
 import threading
 
 from pymongo.son import SON
+from pymongo.errors import OperationFailure
 from time import sleep
-
-if sys.version_info < (2, 6):
-    #TODO fix this
-    print "This script requires python 2.6 or higher"
-    sys.exit(1)
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
-conn = pymongo.Connection() #TODO connection config. need to support multiple connections
-conn.document_class = SON
-
 printLock = threading.Lock()
 def print_(s):
     with printLock:
-        print s
+        print >> sys.stderr, s
 
+if sys.version_info < (2, 6):
+    #TODO fix this
+    print_("This script requires python 2.6 or higher")
+    sys.exit(1)
+
+print_("This will take about 30 seconds...please be patient")
+print_("===================================================")
+print_("")
+
+PORT = 27017
+if len(sys.argv) >= 2:
+    PORT = int(sys.argv[1])
+
+print_("using port: %s"%PORT)
+
+conn = pymongo.Connection(port=PORT)
+conn.document_class = SON
+admin = conn.admin
+
+DBPATH = '/data/db'
+cmdline_opts = admin.command('getCmdLineOpts')['argv']
+config_file = []
+for i in range(len(cmdline_opts)):
+    if cmdline_opts[i] == '--logpath':
+        pass # TODO something
+    elif cmdline_opts[i] == '--dbpath':
+        DBPATH = cmdline_opts[i+1]
+    elif cmdline_opts[i] in ['-f', '--config']:
+        config_file = open(cmdline_opts[i+1]).readlines()
+
+for line in config_file:
+    line = [part.strip() for part in line.split('=')]
+    if len(line) != 2:
+        continue
+    if line[0] == 'logpath':
+        pass # TODO something
+    elif line[0] == 'dbpath':
+        DBPATH = line[1]
 
 def toJSON(obj):
     return json.dumps(obj, indent=4, default=pymongo.json_util.default)
@@ -38,23 +69,30 @@ def runInThreadNow(func):
     t.start()
     all_threads.append(t)
 
+def cmdName(cmd):
+    if isinstance(cmd, basestring):
+        return cmd
+    else:
+        return ' '.join(cmd)
+
 cmd_output = SON()
 def runOnce(cmd):
-    print_("running %s"%cmd)
+    print_("running %s"%cmdName(cmd))
     output = []
-    cmd_output[str(cmd)] = output
+    cmd_output[cmdName(cmd)] = output
 
     @runInThreadNow
     def runner():
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=isinstance(cmd, basestring))
-        proc.wait()
+        if proc.wait() != 0:
+            print_("#### '%s' failed to execute properly. check output for details"%cmdName(cmd))
         output.append(proc.stdout.read())
     
 
 def runForAWhile(cmd, secs=30):
-    print_("running %s"%cmd)
+    print_("running %s"%cmdName(cmd))
     output = []
-    cmd_output[str(cmd)] = output
+    cmd_output[cmdName(cmd)] = output
 
     @runInThreadNow
     def runner():
@@ -62,12 +100,10 @@ def runForAWhile(cmd, secs=30):
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=isinstance(cmd, basestring))
         start = datetime.datetime.now()
-        while ((datetime.datetime.now() - start) < timeout):
-            #print (datetime.datetime.now() - start)
+        while (proc.poll() is None #still running
+               and (datetime.datetime.now() - start) < timeout): #not timed out
             output.append(proc.stdout.readline()) #TODO timestamp?
         proc.terminate() # python 2.6 only
-
-admin = conn.admin
 
 statuses = []
 status_diffs = []
@@ -108,32 +144,86 @@ def getStatuses():
                 pass # these fields are only on linux
 
             status_diffs.append(diff)
+
+db_stats = SON()
+@runInThreadNow
+def getDBDetails():
+    print_("fetching db and collection stats")
+    for dbname in sorted(conn.database_names()):
+        #print_("fetching stats for '%s'"%dbname)
+        db = conn[dbname]
+
+        try:
+            db_stats[dbname] = SON()
+            db_stats[dbname]['stats'] = db.command('dbstats')
+            db_stats[dbname]['colls'] = SON()
+
+            for collname in sorted(db.collection_names()):
+                #print_("fetching stats for '%s.%s'"%(dbname, collname))
+                try:
+                    db_stats[dbname]['colls'][collname] = db.command('collstats', collname)
+                except OperationFailure:
+                    db_stats[dbname]['colls'][collname] = 'FAILED'
+
+        except OperationFailure:
+            db_stats[dbname] = 'FAILED'
         
-#TODO db.stats() db.c.stats() for all dbs
 #TODO fetch http output
 
 runForAWhile('iostat -x 2')
-runForAWhile('mongostat') #TODO connection config
+runForAWhile(['mongostat', '--host', 'localhost:%s'%PORT])
 
+runOnce('free -m') # dup data with top, but easier to read
+runOnce('top -b -n1 | head -n17')
+runOnce('ps -Ao comm,pmem,thcount,pid,user,rssize,vsize --sort=-rssize | head -n11')
+runOnce('uname -a')
+runOnce('mount')
 runOnce('df -h')
-runOnce('du -sh /mnt/external/data/') #TODO dbpath config
-runOnce('ls -lh /mnt/external/data/') #TODO dbpath config
+runOnce(['du', '-sh', DBPATH])
+runOnce(['ls', '-lhR', DBPATH])
 runOnce('sar')
 runOnce('sar -b')
+
+
+# blocking statements ok after here
+buildinfo = admin.command('buildinfo')
 
 
 # TODO need to catch ctrl-c and kill all threads
 for t in all_threads:
     t.join()
 
-
+# BEGIN output
 # TODO dump to files in tarfile rather than just printing
+
+print
+print "------------"
+print "buildinfo"
+print toJSON(buildinfo)
+
+print
+print "------------"
+print "cmdline opts"
+print toJSON(cmdline_opts)
+
+if config_file:
+    print
+    print "------------"
+    print "config_file"
+    print ''.join(config_file)
+
 for i in range(len(statuses)):
     print
     print "------------"
     print status_times[i]
     print toJSON(statuses[i])
-    print toJSON(status_diffs[i])
+    if status_diffs[i]:
+        print toJSON(status_diffs[i])
+
+print
+print "------------"
+print "stats"
+print toJSON(db_stats)
 
 for cmd, output in cmd_output.iteritems():
     print
