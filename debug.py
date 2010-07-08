@@ -26,6 +26,10 @@ if sys.version_info < (2, 6):
     print_("This script requires python 2.6 or higher")
     sys.exit(1)
 
+if map(int, pymongo.version.split('.')) < [1,7]:
+    print_("This script requires pymongo 1.7 or higher")
+    sys.exit(1)
+
 print_("This will take about 30 seconds...please be patient")
 print_("===================================================")
 print_("")
@@ -103,7 +107,14 @@ def runForAWhile(cmd, secs=30):
         while (proc.poll() is None #still running
                and (datetime.datetime.now() - start) < timeout): #not timed out
             output.append(proc.stdout.readline()) #TODO timestamp?
-        proc.terminate() # python 2.6 only
+
+        if proc.poll() != 0:
+            print_("#### '%s' failed to execute properly. check output for details"%cmdName(cmd))
+
+        try:
+            proc.terminate() # python 2.6 only
+        except OSError:
+            pass #already dead
 
 statuses = []
 status_diffs = []
@@ -170,8 +181,12 @@ def getDBDetails():
         
 #TODO fetch http output
 
+
+#note: anything not in standard installs should use shell syntax, not array
+
+#TODO find OSX versions of some of these tools
 runForAWhile('iostat -x 2')
-runForAWhile(['mongostat', '--host', 'localhost:%s'%PORT])
+runForAWhile('mongostat --host localhost:%s'%PORT) # PORT is an int so this is ok
 
 runOnce('free -m') # dup data with top, but easier to read
 runOnce('top -b -n1 | head -n17')
@@ -185,7 +200,7 @@ runOnce('sar')
 runOnce('sar -b')
 
 
-# blocking statements ok after here
+# blocking statements ok after here, but nothing slow
 buildinfo = admin.command('buildinfo')
 
 
