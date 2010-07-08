@@ -5,9 +5,9 @@ import pymongo.json_util
 import datetime
 import subprocess
 import sys
+import threading
 
 from pymongo.son import SON
-from threading import Thread
 from time import sleep
 
 if sys.version_info < (2, 6):
@@ -20,21 +20,27 @@ try:
 except ImportError:
     import simplejson as json
 
-conn = pymongo.Connection() #TODO connection config
+conn = pymongo.Connection() #TODO connection config. need to support multiple connections
 conn.document_class = SON
+
+printLock = threading.Lock()
+def print_(s):
+    with printLock:
+        print s
+
 
 def toJSON(obj):
     return json.dumps(obj, indent=4, default=pymongo.json_util.default)
 
 all_threads = []
 def runInThreadNow(func):
-    t = Thread(target=func)
+    t = threading.Thread(target=func)
     t.start()
     all_threads.append(t)
 
 cmd_output = SON()
 def runOnce(cmd):
-    print "running %s"%cmd
+    print_("running %s"%cmd)
     output = []
     cmd_output[str(cmd)] = output
 
@@ -46,7 +52,7 @@ def runOnce(cmd):
     
 
 def runForAWhile(cmd, secs=30):
-    print "running %s"%cmd
+    print_("running %s"%cmd)
     output = []
     cmd_output[str(cmd)] = output
 
@@ -58,7 +64,8 @@ def runForAWhile(cmd, secs=30):
         start = datetime.datetime.now()
         while ((datetime.datetime.now() - start) < timeout):
             #print (datetime.datetime.now() - start)
-            output.append(proc.stdout.readline())
+            output.append(proc.stdout.readline()) #TODO timestamp?
+        proc.terminate() # python 2.6 only
 
 admin = conn.admin
 
@@ -71,14 +78,14 @@ def getStatuses():
         if i != 0:
             sleep(10)
 
-        print "fetching serverStatus #%s"%(i+1)
+        print_("fetching serverStatus #%s"%(i+1))
 
         stat = admin.command('serverStatus')
         statuses.append(stat)
         status_times.append(str(datetime.datetime.now()))
 
         if i == 0:
-            status_diffs.append({})
+            status_diffs.append(None)
         else:
             last = statuses[i-1]
             time = (stat['uptime'] - last['uptime']) * 1.0 # just to be safe
@@ -109,6 +116,8 @@ runForAWhile('iostat -x 2')
 runForAWhile('mongostat') #TODO connection config
 
 runOnce('df -h')
+runOnce('du -sh /mnt/external/data/') #TODO dbpath config
+runOnce('ls -lh /mnt/external/data/') #TODO dbpath config
 runOnce('sar')
 runOnce('sar -b')
 
@@ -129,7 +138,7 @@ for i in range(len(statuses)):
 for cmd, output in cmd_output.iteritems():
     print
     print "------------"
-    print cmd
+    print '$', cmd
     print ''.join(output)
 
 
