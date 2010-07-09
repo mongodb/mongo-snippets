@@ -5,6 +5,8 @@ import pymongo.json_util
 import datetime
 import subprocess
 import sys
+import os
+import signal
 import threading
 
 from pymongo.son import SON
@@ -18,12 +20,13 @@ except ImportError:
 
 printLock = threading.Lock()
 def print_(s):
-    with printLock:
-        print >> sys.stderr, s
+    printLock.acquire()
+    print >> sys.stderr, s
+    printLock.release()
 
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 4):
     #TODO fix this
-    print_("This script requires python 2.6 or higher")
+    print_("This script requires python 2.4 or higher")
     sys.exit(1)
 
 if map(int, pymongo.version.split('.')) < [1,7]:
@@ -112,7 +115,7 @@ def runForAWhile(cmd, secs=30):
             print_("#### '%s' failed to execute properly. check output for details"%cmdName(cmd))
 
         try:
-            proc.terminate() # python 2.6 only
+            os.kill(proc.pid, signal.SIGINT)
         except OSError:
             pass #already dead
 
