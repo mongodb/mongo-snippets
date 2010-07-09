@@ -1,22 +1,14 @@
 #!/usr/bin/env python
 
-import pymongo
-import pymongo.json_util
 import datetime
 import subprocess
 import sys
 import os
 import signal
 import threading
-
-from pymongo.son import SON
-from pymongo.errors import OperationFailure
 from time import sleep
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+# more imports later
 
 printLock = threading.Lock()
 def print_(s):
@@ -29,8 +21,29 @@ if sys.version_info < (2, 4):
     print_("This script requires python 2.4 or higher")
     sys.exit(1)
 
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError:
+        print_("Please run this: easy_install simplejson")
+        sys.exit(1)
+
+try:
+    import pymongo
+except ImportError:
+    print_("Please run this: easy_install pymongo")
+    sys.exit(1)
+
+import pymongo.json_util
+from pymongo.son import SON
+from pymongo.errors import OperationFailure
+
+#end of imports
+
 if map(int, pymongo.version.split('.')) < [1,7]:
-    print_("This script requires pymongo 1.7 or higher")
+    print_("This script requires pymongo 1.7 or higher: easy_install -U pymongo")
     sys.exit(1)
 
 print_("This will take about 30 seconds...please be patient")
