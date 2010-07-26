@@ -47,8 +47,9 @@ def AFTER_SETUP():
     # admin and conn are both defined globaly
     admin.command('enablesharding', 'test')
 
-    for (collection, key) in COLLECTION_KEYS.iteritems():
-        admin.command('shardcollection', 'test.'+collection, key={ key : 1 })
+    for (collection, keystr) in COLLECTION_KEYS.iteritems():
+        key=pymongo.son.SON((k,1) for k in keystr.split(','))
+        admin.command('shardcollection', 'test.'+collection, key=key)
 
     admin.command('shardcollection', 'test.fs.files', key={'_id':1})
     admin.command('shardcollection', 'test.fs.chunks', key={'files_id':1})
