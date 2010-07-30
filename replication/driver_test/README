@@ -1,0 +1,14 @@
+Driver replSet test runner.
+
+Right now the tests are pretty simple (and a bit hacky), but it's a
+start.
+
+To run you need to write a program that does the equivalent of test.py
+- take a host from stdin, use as a replset seed, print out all members
+of the set, then just repeatedly do a find and print the result.
+
+You need to specify the path to MongoDB executables. By default will
+try ~/10gen/mongo, otherwise use --mongo_path. The rest of the cmd
+line args will be used to specify your driver test program:
+
+`python runner.py --mongo_path /opt/mongo/bin/ python test.py`
