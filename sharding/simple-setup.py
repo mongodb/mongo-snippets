@@ -157,6 +157,7 @@ def printer():
                         print fds[file].prefix, ascolor(INVERSE, 'EXITED'), fds[file].returncode
                         del fds[file]
                         break
+                break
 
 printer_thread = Thread(target=printer)
 printer_thread.start()
