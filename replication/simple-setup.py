@@ -25,10 +25,14 @@ parser.add_option("--mongo_path",
 parser.add_option("--dbpath",
                   help="Base data directory - will be wiped each run (%default)",
                   default="/data/db/replset/")
-parser.add_option("-n", "--set_size",
-                  help="Number of participating members in the set (%default)",
+parser.add_option("-n", "--set_size", type="int",
+                  help="Number of nodes in the set (%default)",
                   default=3)
-parser.add_option("--port",
+parser.add_option("--arbiters", type="int",
+                  help="Number of arbiter nodes - "
+                  "must be less than the set size (%default)",
+                  default=0)
+parser.add_option("--port", type="int",
                   help="First port number to use (%default)", default=27017)
 parser.add_option("--name",
                   help="Replica set name (%default)", default="foo")
@@ -37,13 +41,14 @@ if args:
     print("error: no positional arguments accepted")
     parser.print_help()
     exit(1)
-
+if options.arbiters >= options.set_size:
+    print("error: `arbiters` must be less than `set_size`")
+    exit(2)
 
 if os.path.exists(options.dbpath):
     shutil.rmtree(options.dbpath)
 
-mongod = os.path.join(os.path.expanduser(options.mongo_path), 'mongod')
-devnull = open('/dev/null', 'w+')
+mongod = os.path.join(os.path.expanduser(options.mongo_path), "mongod")
 
 # Just get a different color code to use based on n.
 # See http://pueblo.sourceforge.net/doc/manual/ansi_color_codes.html
@@ -66,7 +71,7 @@ def killAllSubs():
 atexit.register(killAllSubs)
 
 def mkcolor(colorcode):
-    base = '\x1b[%sm'
+    base = "\x1b[%sm"
     return (base*2) % (1, colorcode)
 
 def ascolor(color, text):
@@ -79,7 +84,7 @@ def waitfor(proc, port):
         s = socket(AF_INET, SOCK_STREAM)
         try:
             try:
-                s.connect(('localhost', port))
+                s.connect(("localhost", port))
                 return
             except (IOError, error):
                 sleep(0.25)
@@ -88,7 +93,7 @@ def waitfor(proc, port):
 
     #extra prints to make line stand out
     print
-    print proc.prefix, ascolor(INVERSE, 'failed to start')
+    print proc.prefix, ascolor(INVERSE, "failed to start")
     print
 
     sleep(1)
@@ -109,7 +114,7 @@ def printer():
                     print fds[file].prefix, line
                 else:
                     if fds[file].poll() is not None:
-                        print fds[file].prefix, ascolor(INVERSE, 'EXITED'), fds[file].returncode
+                        print fds[file].prefix, ascolor(INVERSE, "EXITED"), fds[file].returncode
                         del fds[file]
                         break
 
@@ -117,24 +122,37 @@ printer_thread = Thread(target=printer)
 printer_thread.start()
 
 
-members = []
+nodes = []
 for i in range(options.set_size):
-    path = os.path.join(options.dbpath, 'rs_' + str(i))
+    path = os.path.join(options.dbpath, "rs_" + str(i))
     os.makedirs(path)
     port = str(options.port + i)
-    seed = options.name + "/" + ",".join(members)
+    seed = options.name + "/" + ",".join(nodes)
     node = Popen([mongod, "--port", port, "--dbpath", path, "--replSet", seed],
-                 stdin=devnull, stdout=PIPE, stderr=STDOUT)
-    node.prefix = ascolor(get_color(i), 'R' + str(i)) + ':'
+                 stdout=PIPE, stderr=STDOUT)
+    if i < options.arbiters:
+        prefix = "A" + str(i)
+    else:
+        prefix = "R" + str(i - options.arbiters)
+    node.prefix = ascolor(get_color(i), prefix) + ":"
     fds[node.stdout] = node
     procs.append(node)
     waitfor(node, options.port + i)
-    members.append("localhost:%s" % port)
+    nodes.append("localhost:%s" % port)
 
-# The last node has the entire seed list, so initiate from that node
-Connection(members[-1], slave_okay=True).admin.command("replSetInitiate")
+config = {"_id": options.name,
+          "members": []}
+for i in range(len(nodes)):
+    member = {"_id": i, "host": nodes[i]}
+    if i < options.arbiters:
+        member["arbiterOnly"] = True
+    config["members"].append(member)
 
-print '*** READY ***'
+Connection(nodes[0], slave_okay=True).admin.command("replSetInitiate", config)
+
+print "STATUS"
+print Connection(nodes).admin.command("replSetGetStatus")
+print "*** READY ***"
 
 try:
     printer_thread.join()
