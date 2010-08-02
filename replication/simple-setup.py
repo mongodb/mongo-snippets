@@ -17,6 +17,7 @@ from threading import Thread
 from time import sleep
 
 from pymongo import Connection
+from pymongo.errors import AutoReconnect
 
 parser = optparse.OptionParser()
 parser.add_option("--mongo_path",
@@ -128,13 +129,16 @@ for i in range(options.set_size):
     os.makedirs(path)
     port = str(options.port + i)
     seed = options.name + "/" + ",".join(nodes)
-    node = Popen([mongod, "--port", port, "--dbpath", path, "--replSet", seed],
-                 stdout=PIPE, stderr=STDOUT)
+
+    command = [mongod, "--port", port, "--dbpath", path, "--replSet", seed]
     if i < options.arbiters:
+        command += ["--oplogSize", "1"]
         prefix = "A" + str(i)
     else:
         prefix = "R" + str(i - options.arbiters)
+    node = Popen(command, stdout=PIPE, stderr=STDOUT)
     node.prefix = ascolor(get_color(i), prefix) + ":"
+
     fds[node.stdout] = node
     procs.append(node)
     waitfor(node, options.port + i)
@@ -149,10 +153,15 @@ for i in range(len(nodes)):
     config["members"].append(member)
 
 Connection(nodes[0], slave_okay=True).admin.command("replSetInitiate", config)
+while (True):
+    try:
+        print Connection(nodes).admin.command("replSetGetStatus")
+        break
+    except AutoReconnect:
+        sleep(1)
 
-print "STATUS"
-print Connection(nodes).admin.command("replSetGetStatus")
 print "*** READY ***"
+print
 
 try:
     printer_thread.join()
