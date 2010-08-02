@@ -23,8 +23,9 @@ $db = $m->replset;
 $x = 0;
 while ($x < 5) {
     try {
-        $x = $db->test->findOne();
-        echo "$x[a]\n";
+        $z = $db->test->findOne();
+        $x = $z['a'];
+        echo "$x\n";
     } catch (MongoException $e) {
         echo "E\n";
     }
