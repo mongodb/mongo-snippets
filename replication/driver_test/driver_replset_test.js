@@ -3,7 +3,6 @@ var nodes = replTest.startSet();
 replTest.initiate();
 
 var live_nodes = replTest.liveNodes;
-
 var master = replTest.getMaster();
 
 // Just be sure replication is up and running
@@ -22,7 +21,7 @@ replTest.ports.forEach(function(port) {
 });
 
 function fail_over() {
-    sleep(2000);
+    sleep(9000);
     var master_id = replTest.getNodeId( master );
     replTest.stop( master_id );
     master = replTest.getMaster();
