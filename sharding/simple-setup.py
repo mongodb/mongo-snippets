@@ -18,11 +18,11 @@ from time import sleep
 
 BASE_DATA_PATH='/data/db/sharding/' #warning: gets wiped every time you run this
 MONGO_PATH=os.getenv( "MONGO_HOME" , os.path.expanduser('~/10gen/mongo/') )
-print( "MONGO_PATH: " + MONGO_PATH )
 N_SHARDS=3
 N_CONFIG=1 # must be either 1 or 3
+N_MONGOS=3
 CHUNK_SIZE=200 # in MB (make small to test splitting)
-MONGOS_PORT=27017
+MONGOS_PORT=27017 if N_MONGOS == 1 else 10000 # start at 10001 when multi
 
 CONFIG_ARGS=[]
 MONGOS_ARGS=[]
@@ -65,18 +65,22 @@ for x in sys.argv[1:]:
     if opt[0].startswith('--'):
         opt[0] = opt[0][2:].lower()
         if opt[0] == 'help':
-            print sys.argv[0], '[--help] [--chunksize=200] [--port=27017] [collection=key]'
+            print sys.argv[0], '[--help] [--chunksize=200] [--port=27017] [--path=/where/is/mongod] [collection=key]'
             sys.exit()
         elif opt[0] == 'chunksize':
             CHUNK_SIZE = int(opt[1])
         elif opt[0] == 'port':
             MONGOS_PORT = int(opt[1])
+        elif opt[0] == 'path':
+            MONGOS_PATH = opt[1]
         elif opt[0] == 'usevalgrind': #intentionally not in --help
             USE_VALGRIND = int(opt[1])
         else:
             raise( Exception("unknown option: " + opt[0] ) )
     else:
         COLLECTION_KEYS[opt[0]] = opt[1]
+
+print( "MONGO_PATH: " + MONGO_PATH )
 
 if not USE_VALGRIND:
     VALGRIND_ARGS = []
@@ -154,6 +158,7 @@ def printer():
                         print fds[file].prefix, ascolor(INVERSE, 'EXITED'), fds[file].returncode
                         del fds[file]
                         break
+                break
 
 printer_thread = Thread(target=printer)
 printer_thread.start()
@@ -190,15 +195,19 @@ for config_str in configs:
     config.settings.save({'_id':'chunksize', 'value':CHUNK_SIZE}, safe=True)
 del config #don't leave around connection directly to config server
 
-router = Popen(VALGRIND_ARGS + [mongos, '--port', str(MONGOS_PORT), '--configdb' , ','.join(configs)] + MONGOS_ARGS,
-               stdin=devnull, stdout=PIPE, stderr=STDOUT)
-router.prefix = ascolor(MONGOS_COLOR, 'S' + str(1)) + ':'
-fds[router.stdout] = router
-procs.append(router)
+if N_MONGOS == 1:
+    MONGOS_PORT -= 1 # added back in loop
 
-waitfor(router, MONGOS_PORT)
+for i in range(1, N_MONGOS+1):
+    router = Popen(VALGRIND_ARGS + [mongos, '--port', str(MONGOS_PORT+i), '--configdb' , ','.join(configs)] + MONGOS_ARGS,
+                   stdin=devnull, stdout=PIPE, stderr=STDOUT)
+    router.prefix = ascolor(MONGOS_COLOR, 'S' + str(i)) + ':'
+    fds[router.stdout] = router
+    procs.append(router)
 
-conn = pymongo.Connection('localhost', MONGOS_PORT)
+    waitfor(router, MONGOS_PORT + i)
+
+conn = pymongo.Connection('localhost', MONGOS_PORT + 1)
 admin = conn.admin
 
 for i in range(1, N_SHARDS+1):
