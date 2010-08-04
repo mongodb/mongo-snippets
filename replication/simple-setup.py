@@ -33,6 +33,9 @@ parser.add_option("--arbiters", type="int",
                   help="Number of arbiter nodes - "
                   "must be less than the set size (%default)",
                   default=0)
+parser.add_option("--oplog_size", type="int",
+                  help="oplogSize for non-arbiter nodes (%default)",
+                  default=100)
 parser.add_option("--port", type="int",
                   help="First port number to use (%default)", default=27017)
 parser.add_option("--name",
@@ -130,11 +133,12 @@ for i in range(options.set_size):
     port = str(options.port + i)
     seed = options.name + "/" + ",".join(nodes)
 
-    command = [mongod, "--port", port, "--dbpath", path, "--replSet", seed]
+    command = [mongod, "--port", port, "--dbpath", path, "--replSet", seed, "--rest"]
     if i < options.arbiters:
         command += ["--oplogSize", "1"]
         prefix = "A" + str(i)
     else:
+        command += ["--oplogSize", str(options.oplog_size)]
         prefix = "R" + str(i - options.arbiters)
     node = Popen(command, stdout=PIPE, stderr=STDOUT)
     node.prefix = ascolor(get_color(i), prefix) + ":"
@@ -152,7 +156,9 @@ for i in range(len(nodes)):
         member["arbiterOnly"] = True
     config["members"].append(member)
 
-Connection(nodes[0], slave_okay=True).admin.command("replSetInitiate", config)
+sleep(10)
+# Last node won't be an arbiter, so use that for initiate
+Connection(nodes[-1], slave_okay=True).admin.command("replSetInitiate", config)
 while (True):
     try:
         print Connection(nodes).admin.command("replSetGetStatus")
