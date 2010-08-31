@@ -53,6 +53,14 @@ if os.path.exists(options.dbpath):
     shutil.rmtree(options.dbpath)
 
 mongod = os.path.join(os.path.expanduser(options.mongo_path), "mongod")
+if not os.path.exists( mongod ):
+    alternates = [ os.getenv( "HOME" ) + "/work/mongo/mongod" ]
+    for x in alternates:
+        if os.path.exists( x ):
+            mongod = x
+    
+    if not os.path.exists( mongod ):
+        raise Exception( "can't find mongod" )
 
 # Just get a different color code to use based on n.
 # See http://pueblo.sourceforge.net/doc/manual/ansi_color_codes.html
