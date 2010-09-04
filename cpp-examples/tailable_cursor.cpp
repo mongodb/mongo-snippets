@@ -30,13 +30,14 @@ void tail(DBClientBase& conn, const char *ns) {
 		  break;
 		}
 		sleepsecs(1); // all data (so far) exhausted, wait for more
+		continue; // we will try more() again
       }
       BSONObj o = c->next();
       lastId = o["_id"];
       cout << o.toString() << endl;
     }
 
-    // prepare to requery
+    // prepare to requery from where we left off
     query = QUERY( "_id" << GT << lastId ).sort("_id");
   }
 }
