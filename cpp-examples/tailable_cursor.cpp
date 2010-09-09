@@ -9,17 +9,16 @@
 */
 
 #include "client/dbclient.h"
-#include "util/goodies.h"
 
 using namespace mongo;
 
 /* "tail" the namespace, outputting elements as they are added.
-   For this to work _id values should be increasing when items are
-   added.
+   For this to work something field -- _id in this case -- should be increasing
+   when items are added.
 */
 void tail(DBClientBase& conn, const char *ns) {
   BSONElement lastId = minKey.firstElement(); // minKey is smaller than any other possible value
-  Query query = Query().sort("_id");
+  Query query = Query().sort("$natural"); // { $natural : 1 } means in forward capped collection insertion order
   while( 1 ) {
     auto_ptr<DBClientCursor> c =
       conn.query(ns, query, 0, 0, 0, QueryOption_CursorTailable);
@@ -38,6 +37,6 @@ void tail(DBClientBase& conn, const char *ns) {
     }
 
     // prepare to requery from where we left off
-    query = QUERY( "_id" << GT << lastId ).sort("_id");
+    query = QUERY( "_id" << GT << lastId ).sort("$natural");
   }
 }
