@@ -28,10 +28,9 @@ CONFIG_ARGS=[]
 MONGOS_ARGS=[]
 MONGOD_ARGS=[]
 
-# Note this reports a lot of false positives.
-USE_VALGRIND=False
-VALGRIND_ARGS=["valgrind", "--log-file=/tmp/mongos-%p.valgrind", "--leak-check=yes", 
-               ("--suppressions="+MONGO_PATH+"valgrind.suppressions"), "--"]
+# Note Valgrind reports a lot of false positives.
+USE_VALGRIND  = False
+VALGRIND_ARGS = []
 
 # see http://pueblo.sourceforge.net/doc/manual/ansi_color_codes.html
 CONFIG_COLOR=31 #red
@@ -72,7 +71,7 @@ for x in sys.argv[1:]:
         elif opt[0] == 'port':
             MONGOS_PORT = int(opt[1])
         elif opt[0] == 'path':
-            MONGOS_PATH = opt[1]
+            MONGO_PATH = opt[1]
         elif opt[0] == 'usevalgrind': #intentionally not in --help
             USE_VALGRIND = int(opt[1])
         else:
@@ -80,10 +79,13 @@ for x in sys.argv[1:]:
     else:
         COLLECTION_KEYS[opt[0]] = opt[1]
 
+# Popen likes absolute paths to the executable
+MONGO_PATH = os.path.abspath( os.path.expanduser(MONGO_PATH) ) + '/'
 print( "MONGO_PATH: " + MONGO_PATH )
 
-if not USE_VALGRIND:
-    VALGRIND_ARGS = []
+if USE_VALGRIND:
+    VALGRIND_ARGS=["valgrind", "--log-file=/tmp/mongos-%p.valgrind", "--leak-check=yes", 
+               ("--suppressions="+MONGO_PATH+"valgrind.suppressions"), "--"]
 
 # fixed "colors"
 RESET = 0
@@ -143,7 +145,13 @@ def waitfor(proc, port):
 
 
 def printer():
-    while not fds: sleep(0.01) # wait until there is at least one fd to watch
+    trys = 0
+    while not fds: 
+        sleep(0.01) # wait until there is at least one fd to watch
+        if trys > 100:
+            print "We waited too long for the first process.  Did it fail? Exiting."
+            sys.exit(1)
+        trys += 1
 
     while fds:
         (files, _ , errors) = select(fds.keys(), [], fds.keys(), 1)
@@ -180,7 +188,7 @@ for i in range(1, N_CONFIG+1):
 for i in range(1, N_SHARDS+1):
     path = BASE_DATA_PATH +'shard_' + str(i)
     os.makedirs(path)
-    shard = Popen([mongod, '--port', str(30000 + i), '--shardsvr', '--dbpath', path] + MONGOD_ARGS,
+    shard = Popen([mongod, '--port', str(30000 + i), '--shardsvr', '--dbpath', path, '--rest'] + MONGOD_ARGS,
                   stdin=devnull, stdout=PIPE, stderr=STDOUT)
     shard.prefix = ascolor(MONGOD_COLOR, 'M' + str(i)) + ':'
     fds[shard.stdout] = shard
