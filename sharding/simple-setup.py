@@ -12,6 +12,13 @@ from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
 from time import sleep
 
+try:
+    # new pymongo
+    from bson.son import SON
+except ImportError:
+    # old pymongo
+    from pymongo.son import SON
+
 # BEGIN CONFIGURATION
 
 # some settings can also be set on command line. start with --help to see options
@@ -48,7 +55,7 @@ def AFTER_SETUP():
     admin.command('enablesharding', 'test')
 
     for (collection, keystr) in COLLECTION_KEYS.iteritems():
-        key=pymongo.son.SON((k,1) for k in keystr.split(','))
+        key=SON((k,1) for k in keystr.split(','))
         admin.command('shardcollection', 'test.'+collection, key=key)
 
     admin.command('shardcollection', 'test.fs.files', key={'_id':1})
