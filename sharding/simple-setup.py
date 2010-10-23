@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import os
 import sys
@@ -12,6 +12,13 @@ from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
 from time import sleep
 
+try:
+    # new pymongo
+    from bson.son import SON
+except ImportError:
+    # old pymongo
+    from pymongo.son import SON
+
 # BEGIN CONFIGURATION
 
 # some settings can also be set on command line. start with --help to see options
@@ -20,7 +27,7 @@ BASE_DATA_PATH='/data/db/sharding/' #warning: gets wiped every time you run this
 MONGO_PATH=os.getenv( "MONGO_HOME" , os.path.expanduser('~/10gen/mongo/') )
 N_SHARDS=3
 N_CONFIG=1 # must be either 1 or 3
-N_MONGOS=3
+N_MONGOS=1
 CHUNK_SIZE=200 # in MB (make small to test splitting)
 MONGOS_PORT=27017 if N_MONGOS == 1 else 10000 # start at 10001 when multi
 
@@ -48,7 +55,7 @@ def AFTER_SETUP():
     admin.command('enablesharding', 'test')
 
     for (collection, keystr) in COLLECTION_KEYS.iteritems():
-        key=pymongo.son.SON((k,1) for k in keystr.split(','))
+        key=SON((k,1) for k in keystr.split(','))
         admin.command('shardcollection', 'test.'+collection, key=key)
 
     admin.command('shardcollection', 'test.fs.files', key={'_id':1})
