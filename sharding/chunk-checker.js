@@ -1,14 +1,19 @@
 // start this script as 'mongo chunk-checker.js --host config:port'
 
-confirm = function(text){
+chunksToDelete = []
+
+notify = function(text, wait5secs){
     print(); // blank line
     print('########################################');
     print(text)
-    print('Hit CTRL-C to cancel');
 
-    for (var i=5; i; i--){
-        print(i + ' seconds...');
-        sleep(1000 /*ms*/);
+    if (wait5secs) {
+        print('Hit CTRL-C to cancel');
+
+        for (var i=5; i; i--){
+            print(i + ' seconds...');
+            sleep(1000 /*ms*/);
+        }
     }
 
     print();
@@ -21,7 +26,7 @@ makeQuery = function(chunk){
     return out;
 }
 
-confirm("If your data set doesn't fit in RAM, this script may take a long time to run and put significant stress your servers. Please do not run at peak times or if near operating capacity.");
+notify("If your data set doesn't fit in RAM, this script may take a long time to run and put significant stress your servers. Please do not run at peak times or if near operating capacity.", true);
 
 //TODO: consider preventing migrates
 
@@ -63,9 +68,9 @@ config.chunks.find().snapshot().forEach(function(chunk){
         var msg = 'WARNING: No shards have data for this chunk';
         if (friendlyEqual(chunk.min, MinKey))
             msg += ' (this may be OK)';
-        confirm(msg);
+        notify(msg);
     }else if (!Array.contains(onShards, chunk.shard)){
-        confirm('WARNING: shard "' + chunk.shard + '" has no data for this chunk. Not running remove');
+        notify('WARNING: shard "' + chunk.shard + '" has no data for this chunk. Not running remove');
     }else{
         for (var i=0; i < onShards.length; i++){
             var shard = onShards[i];
@@ -73,11 +78,23 @@ config.chunks.find().snapshot().forEach(function(chunk){
             if (shard == chunk.shard)
                 continue;
 
-            confirm('About to remove data for this chunk from shard "' + shard + '"');
+            notify('WARNING: data needs to be removed for this chunk from shard "' + shard + '"');
 
             var c = shards[shard].getCollection(curNS);
-            c.remove(query);
+            chunksToDelete.push({connection: c, query: query});
         }
     }
 });
+
+function cleanUpChunks(){
+    for (var i=0; i< chunksToDelete.length; i++){
+        var c = chunksToDelete[i].connection;
+        var q = chunksToDelete[i].query;
+        c.remove(q);
+    }
+}
+
+if (chunksToDelete.length > 0) {
+    print ("run with --shell and type cleanUpChunks() to remove data on the wrong shard");
+}
     
