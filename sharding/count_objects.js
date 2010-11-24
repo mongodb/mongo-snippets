@@ -54,15 +54,15 @@ DB.prototype.getObjectCounts = function( collectionName ) {
         }
     )
 
-    print( "\n****************************************" );
-    print( "to split a chunk manually:" );
-    print( "> use admin" );
-    print( "> db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " }" );
-    print( );
-
     chunks.forEach(
         function( chunk ) {
             print( chunk.count + "\t" + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
         }
     )            
+
+    print( "\n****************************************" );
+    print( "\tto split a chunk manually:" );
+    print( "\t> use admin" );
+    print( "\t> db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " }" );
+    print( );
 }
