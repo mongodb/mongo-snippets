@@ -1,9 +1,9 @@
 /**
- * @brief counts the number of object in each of the chunks for a given collection
+ * Counts the number of object in each of the chunks for a given collection
  *
  * @param collectionName is a non-empty collection in the current database 
  * 
- * @usage
+ * @example
  *   > load( "full/path/to/file/count_objects.js" )
  *   > use my_database 
  *   > db.getObjectCounts( "my_collection" )
