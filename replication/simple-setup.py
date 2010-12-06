@@ -53,6 +53,7 @@ if os.path.exists(options.dbpath):
     shutil.rmtree(options.dbpath)
 
 mongod = os.path.join(os.path.expanduser(options.mongo_path), "mongod")
+print( mongod )
 if not os.path.exists( mongod ):
     alternates = [ os.getenv( "HOME" ) + "/work/mongo/mongod" ]
     for x in alternates:
