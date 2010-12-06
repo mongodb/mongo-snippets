@@ -47,7 +47,7 @@ MONGOD_COLOR=36 #cyan
 BOLD=True
 
 # defaults -- can change on command line
-COLLECTION_KEYS = {'foo' : '_id', 'bar': 'key'}
+COLLECTION_KEYS = {'foo' : '_id', 'bar': 'key', 'foo2' : 'a,b' }
 
 def AFTER_SETUP():
     # feel free to change any of this
@@ -79,7 +79,7 @@ for x in sys.argv[1:]:
         elif opt[0] == 'port':
             MONGOS_PORT = int(opt[1])
         elif opt[0] == 'path':
-            MONGOS_PATH = opt[1]
+            MONGO_PATH = opt[1]
         elif opt[0] == 'usevalgrind': #intentionally not in --help
             USE_VALGRIND = int(opt[1])
         else:
