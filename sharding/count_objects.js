@@ -33,17 +33,17 @@ DB.prototype.getObjectCounts = function( collectionName ) {
             // for shardKeys:    { a : 1 , b : 1 , ... }
             // filter should be: { a : { $gte: <a.min> , $lt: <a.max> } , b: { ... } , ... }
             // using min and max on 'chunk'
-            var filter = {} 
-            for ( key in shardKeys ) {
-                var interval = {}
-                interval["$gte"] = chunk.min[key];
-                interval["$lt"] = chunk.max[key];
-                filter[key] = interval;
-            }
+            var filter = {}
+            filter["$min"] = chunk.min;
+            filter["$max"] = chunk.max;
+            filter["$query"] = {};
 
             // each count can take some time (seconds) so print chunk bounds before issuing the command
             print( "counting " + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
-            chunk["count"] = ns.count( filter );
+            //printjson(filter );
+            //printjson(shardKeys);
+
+            chunk["count"] = ns.find( filter , shardKeys ).itcount();
         }
     )
 
@@ -53,7 +53,8 @@ DB.prototype.getObjectCounts = function( collectionName ) {
             return b.count - a.count;
         }
     )
-
+    
+    print( "\n****************************************" );
     chunks.forEach(
         function( chunk ) {
             print( chunk.count + "\t" + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
