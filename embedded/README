@@ -1,1 +1,9 @@
 At this time, anything in this directory should be considered experimental and unsupported.
+DONT USE THIS.
+You've been warned. :-)
+
+to build helloworld: 
+
+  ./build.sh
+
+you will need mongo (latest) in ../../mongo
