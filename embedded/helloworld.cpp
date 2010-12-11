@@ -11,20 +11,20 @@ void doSomething();
 
 int main(int argc, char *argv[]) { 
     cout << "hello" << endl;
-	mongo::initEmbeddedMongo(argc, argv);
+    mongo::initEmbeddedMongo(argc, argv);
 
-	cout << "\n\n\n" << endl;
+    cout << "\n\n\n" << endl;
 
-	try { 
+    try { 
   	    doSomething();
-	}
-	catch(...) { 
+    }
+    catch(...) { 
         cout << "exception in doSomething()!" << endl;
     }
 
-	cout << "\n\n\n" << endl;
+    cout << "\n\n\n" << endl;
 
-	mongo::endEmbeddedMongo();
+    mongo::endEmbeddedMongo();
     return 0;
 }
 
@@ -41,8 +41,8 @@ void doSomething() {
     // make a BSON object
     bo obj = BSON( "x" << 3 << "y" << "abcdef" );
 
-	// do some db operations
-	const string ns = "test.mycollection"; // ns = 'namespace' = dbname+'.'+collectionname
+    // do some db operations
+    const string ns = "test.mycollection"; // ns = 'namespace' = dbname+'.'+collectionname
     c->insert(ns, obj);
     cout << "count: " << c->count(ns) << endl;	
 }
