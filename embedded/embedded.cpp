@@ -41,7 +41,9 @@
 #include "dbwebserver.h"
 #include "dur.h"
 #include "concurrency.h"
+#if !defined(_WIN32)
 #include <sys/file.h>
+#endif
 
 namespace mongo {
 
@@ -461,11 +463,12 @@ sendmore:
         }
 
         if (cmdLine.dur)
-            enableDurability();
+            dur::enableDurability();
 
         getDur().startup();
-        if( cmdLine.durTrace & CmdLine::DurRecoverOnly ) 
-            return;
+
+        //if( cmdLine.durTrace & CmdLine::DurRecoverOnly ) 
+        //    return;
 
         repairDatabasesAndCheckVersion();
 
@@ -592,10 +595,6 @@ int initEmbeddedMongo(int argc, char* argv[])
         ("ipv6", "enable IPv6 support (disabled by default)")
         ;
 
-#if defined(_WIN32)
-    CmdLine::addWindowsOptions( windows_scm_options, hidden_options );
-#endif
-
 	replication_options.add_options()
         ("fastsync", "indicate that this instance is starting from a dbpath snapshot of the repl peer")
         ("autoresync", "automatically resync if slave data is stale")
@@ -617,12 +616,6 @@ int initEmbeddedMongo(int argc, char* argv[])
         ("replSet", po::value<string>(), "specify repl set seed hostnames format <set id>/<host1>,<host2>,etc...")
         ;
         
-	sharding_options.add_options()
-		("configsvr", "declare this is a config db of a cluster; default port 27019; default dir /data/configdb")
-		("shardsvr", "declare this is a shard db of a cluster; default port 27018")
-        ("noMoveParanoia" , "turn off paranoid saving of data for moveChunk.  this is on by default for now, but default will switch" )
-		;
-
     hidden_options.add_options()
         ("pretouch", po::value<int>(), "n pretouch threads for applying replicationed operations")
         ("command", po::value< vector<string> >(), "command")
@@ -635,13 +628,9 @@ int initEmbeddedMongo(int argc, char* argv[])
 
     positional_options.add("command", 3);
     visible_options.add(general_options);
-	#if defined(_WIN32)
-	visible_options.add(windows_scm_options);
-	#endif
     visible_options.add(replication_options);
     visible_options.add(ms_options);
     visible_options.add(rs_options);
-    visible_options.add(sharding_options);
     Module::addOptions( visible_options );
 
     setupCoreSignals();
@@ -718,13 +707,8 @@ int initEmbeddedMongo(int argc, char* argv[])
             assert( false );
 #endif
         }
-        if (params.count("durTrace")) {
-            cmdLine.durTrace = params["durTrace"].as<int>();
-#if !defined(_DURABLE)
-            assert( cmdLine.durTrace == 0 );
-#endif
-        }
-        if (params.count("objcheck")) {
+        {
+            // objcheck on for safety
             objcheck = true;
         }
         if (params.count("appsrvpath")) {
