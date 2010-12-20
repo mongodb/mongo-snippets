@@ -29,21 +29,10 @@ DB.prototype.getObjectCounts = function( collectionName ) {
 
     // get the object count for each chunk
     chunks.forEach(
-        function( chunk ) { 
-            // for shardKeys:    { a : 1 , b : 1 , ... }
-            // filter should be: { a : { $gte: <a.min> , $lt: <a.max> } , b: { ... } , ... }
-            // using min and max on 'chunk'
-            var filter = {}
-            filter["$min"] = chunk.min;
-            filter["$max"] = chunk.max;
-            filter["$query"] = {};
-
+        function( chunk ) {
             // each count can take some time (seconds) so print chunk bounds before issuing the command
             print( "counting " + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
-            //printjson(filter );
-            //printjson(shardKeys);
-
-            chunk["count"] = ns.find( filter , shardKeys ).itcount();
+            chunk["count"] = ns.find( {} , shardKeys ).min(chunk.min).max(chunk.max).itcount();
         }
     )
 
