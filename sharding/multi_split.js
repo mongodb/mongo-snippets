@@ -38,7 +38,7 @@ DB.prototype.multiSplit = function( collectionName , mongosAddress ) {
     var chunks = cfg.chunks.find( { "ns": ns } , { _id: 0 , min: 1 , max: 1 , shard:1 } ).sort({ min:1 }).toArray();
 
     // for now, fix chunk size to 32MB
-    var desiredSizeInBytes = 34359738368;
+    var desiredSizeInBytes = 32*1024*1024;
 
     // get the keys to split in for that size for each chunk
     chunks.forEach(
