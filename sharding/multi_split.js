@@ -44,8 +44,15 @@ DB.prototype.multiSplit = function( collectionName , mongosAddress ) {
     chunks.forEach(
         function( chunk ) {
             print( "checking chunk " + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
-            var keys = db.runCommand( { splitVector: ns, keyPattern: shardKeys, min: chunk.min, max: chunk.max, maxChunkSizeBytes: desiredSizeInBytes } ).splitKeys; 
 
+            var splitCommand = { splitVector: ns, keyPattern: shardKeys, min: chunk.min, max: chunk.max, maxChunkSizeBytes: desiredSizeInBytes };
+            var res = db.runCommand( splitCommand ); 
+            if ( res.ok == 0 ) {
+                print( "error running " + tojson(splitCommand) + ": " + tojson(res) );
+                return;
+            }
+
+            var keys = res.splitKeys;
             if ( keys.length == 0 ) {
                 print( "no split necessary for this shard for chunk size " + desiredSizeInBytes );
             }
