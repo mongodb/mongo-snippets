@@ -32,7 +32,7 @@ DB.prototype.getObjectCounts = function( collectionName ) {
         function( chunk ) {
             // each count can take some time (seconds) so print chunk bounds before issuing the command
             print( "counting " + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
-            chunk["count"] = ns.find( {} , shardKeys ).min(chunk.min).max(chunk.max).itcount();
+            chunk["count"] = ns.find( {} , shardKeys ).min(chunk.min).max(chunk.max).explain().n;
         }
     )
 
