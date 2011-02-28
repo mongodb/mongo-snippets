@@ -62,14 +62,16 @@ DB.prototype.getObjectCounts = function( collectionName ) {
                      throw "need minSize arg to fix";
 
                  for ( var i=0; i<chunks.length; i++ ) {
-                     if ( chunks[i].count <= minSize )
+                     if ( chunks[i].count < minSize )
                          continue;
                      
-                     print( "\t db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " } );" );
+                     print( "\t db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " } ); // count: " + chunks[i].count );
                      if ( reallyRun ) {
                          printjson( db.getSisterDB( "admin" ).runCommand( { split : ns  , find : chunks[i].min } ) )
                          sleep( 500 );
                      }
                  }
-             } };
+             } , 
+             shellPrint : function(){ return ""; } 
+           };
 }
