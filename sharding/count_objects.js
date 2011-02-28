@@ -57,7 +57,7 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     print( );
 
     return { chunks : chunks , 
-             fix : function( minSize ) { 
+             fix : function( minSize , reallyRun ) { 
                  if ( ! minSize )
                      throw "need minSize arg to fix";
 
@@ -66,7 +66,10 @@ DB.prototype.getObjectCounts = function( collectionName ) {
                          continue;
                      
                      print( "\t db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " } );" );
-                     
+                     if ( reallyRun ) {
+                         printjson( db.getSisterDB( "admin" ).runCommand( { split : ns  , find : chunks[i].min } ) )
+                         sleep( 500 );
+                     }
                  }
              } };
 }
