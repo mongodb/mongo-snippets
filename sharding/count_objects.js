@@ -53,7 +53,7 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     print( "\n****************************************" );
     print( "\tto split a chunk manually:" );
     print( "\t> use admin" );
-    print( "\t> db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " }" );
+    print( "\t> db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " } )" );
     print( );
 
     return { chunks : chunks , 
@@ -65,7 +65,7 @@ DB.prototype.getObjectCounts = function( collectionName ) {
                      if ( chunks[i].count <= minSize )
                          continue;
                      
-                     print( "\t db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " }" );
+                     print( "\t db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " } );" );
                      
                  }
              } };
