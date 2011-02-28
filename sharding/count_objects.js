@@ -55,4 +55,18 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     print( "\t> use admin" );
     print( "\t> db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " }" );
     print( );
+
+    return { chunks : chunks , 
+             fix : function( minSize ) { 
+                 if ( ! minSize )
+                     throw "need minSize arg to fix";
+
+                 for ( var i=0; i<chunks.length; i++ ) {
+                     if ( chunks[i].count <= minSize )
+                         continue;
+                     
+                     print( "\t db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " }" );
+                     
+                 }
+             } };
 }
