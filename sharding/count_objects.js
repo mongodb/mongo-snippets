@@ -44,6 +44,8 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     )
     
     print( "\n****************************************" );
+    print( "DONE COUNTING" );
+    print( "\n****************************************" );
     chunks.forEach(
         function( chunk ) {
             print( chunk.count + "\t" + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
