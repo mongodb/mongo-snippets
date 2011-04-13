@@ -29,21 +29,10 @@ DB.prototype.getObjectCounts = function( collectionName ) {
 
     // get the object count for each chunk
     chunks.forEach(
-        function( chunk ) { 
-            // for shardKeys:    { a : 1 , b : 1 , ... }
-            // filter should be: { a : { $gte: <a.min> , $lt: <a.max> } , b: { ... } , ... }
-            // using min and max on 'chunk'
-            var filter = {}
-            filter["$min"] = chunk.min;
-            filter["$max"] = chunk.max;
-            filter["$query"] = {};
-
+        function( chunk ) {
             // each count can take some time (seconds) so print chunk bounds before issuing the command
             print( "counting " + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
-            //printjson(filter );
-            //printjson(shardKeys);
-
-            chunk["count"] = ns.find( filter , shardKeys ).itcount();
+            chunk["count"] = ns.find( {} , shardKeys ).min(chunk.min).max(chunk.max).explain().n;
         }
     )
 
@@ -55,6 +44,8 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     )
     
     print( "\n****************************************" );
+    print( "DONE COUNTING" );
+    print( "\n****************************************" );
     chunks.forEach(
         function( chunk ) {
             print( chunk.count + "\t" + tojson(chunk.min) + " -->> " + tojson(chunk.max) );
@@ -64,6 +55,25 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     print( "\n****************************************" );
     print( "\tto split a chunk manually:" );
     print( "\t> use admin" );
-    print( "\t> db.runCommand( split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " }" );
+    print( "\t> db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " } )" );
     print( );
+
+    return { chunks : chunks , 
+             fix : function( minSize , reallyRun ) { 
+                 if ( ! minSize )
+                     throw "need minSize arg to fix";
+
+                 for ( var i=0; i<chunks.length; i++ ) {
+                     if ( chunks[i].count < minSize )
+                         continue;
+                     
+                     print( "\t db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[i].min ) + " } ); // count: " + chunks[i].count );
+                     if ( reallyRun ) {
+                         printjson( db.getSisterDB( "admin" ).runCommand( { split : ns  , find : chunks[i].min } ) )
+                         sleep( 500 );
+                     }
+                 }
+             } , 
+             shellPrint : function(){ return ""; } 
+           };
 }

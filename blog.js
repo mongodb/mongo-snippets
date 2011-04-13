@@ -34,36 +34,27 @@ print( db.posts.findOne( { tags : "mongo" } ).title );
 
 // for computing things like tag clouds, you can run javascript in the db
 function tagCloud(){
+    
+    print( db.version() )
 
-    var counts = db.eval(
-        function(){
-            var counts = {};
-            db.posts.find().forEach(
-                function(p){
-                    if ( p.tags ){
-                        for ( var i=0; i<p.tags.length; i++ ){
-                            var name = p.tags[i];
-                            
-                            counts[name] = 1 + ( counts[name] || 0 );
-                        }
-                    }
-                }
-            );
-            return counts;
+    var res = db.posts.mapReduce( 
+        function(){ 
+            for ( var i=0; i<this.tags.length; i++ ){
+                var name = this.tags[i];
+                emit( this.tags[i] , 1 );
+            }
+        } ,
+        function( key , values ){
+            return Array.sum( values );
         }
-    );
+        , { out : { inline : true } } )
+
+    assert( res.ok );
     
-    // maybe sort to by nice
-    var sorted = [];
-    for ( var tag in counts ){
-        sorted.push( { name : tag , num : counts[tag] } )
-    }
-    
-    return sorted.sort(
-        function(l,r){
-            return r.num - l.num;
-        }
-    );
+    var counts = {}
+    res.results.forEach( function(z){ counts[z._id] = z.value } )
+    return counts;
+
     
 }
 

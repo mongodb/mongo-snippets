@@ -87,6 +87,9 @@ for x in sys.argv[1:]:
     else:
         COLLECTION_KEYS[opt[0]] = opt[1]
 
+if MONGO_PATH[-1] != '/':
+    MONGO_PATH = MONGO_PATH+'/'
+
 print( "MONGO_PATH: " + MONGO_PATH )
 
 if not USE_VALGRIND:
