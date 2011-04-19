@@ -1,3 +1,9 @@
+// commit latency test 
+// run mongod with --journal parameter
+// then run this script on the command line of the mongo shell (mongo)
+// NOTE: this test is for v1.9.  this test is for dev testing and subject
+//       to change this parameter may not be permanent.
+
 function time(f) {
  var s = new Date();
  f();
