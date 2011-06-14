@@ -12,7 +12,8 @@
 
 using namespace mongo;
 
-/* "tail" the namespace, outputting elements as they are added.
+/* "tail" the namespace, outputting elements as they are added.  Cursor blocks waiting for data if
+   no documents currently exist.
    For this to work something field -- _id in this case -- should be increasing
    when items are added.
 */
@@ -21,14 +22,14 @@ void tail(DBClientBase& conn, const char *ns) {
   Query query = Query().sort("$natural"); // { $natural : 1 } means in forward capped collection insertion order
   while( 1 ) {
     auto_ptr<DBClientCursor> c =
-      conn.query(ns, query, 0, 0, 0, QueryOption_CursorTailable);
+      conn.query(ns, query, 0, 0, 0, QueryOption_CursorTailable | QueryOption_AwaitData );
     while( 1 ) {
       if( !c->more() ) {
 		if( c->isDead() ) {
 		  // we need to requery
 		  break;
 		}
-		sleepsecs(1); // all data (so far) exhausted, wait for more
+		// No need to wait, cursor will block with _AwaitData
 		continue; // we will try more() again
       }
       BSONObj o = c->next();
