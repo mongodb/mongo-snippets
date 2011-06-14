@@ -29,7 +29,7 @@ void tail(DBClientBase& conn, const char *ns) {
 		  // we need to requery
 		  break;
 		}
-		// No need to wait, cursor will block with _AwaitData
+		// No need to wait here, cursor will block for several ms with _AwaitData
 		continue; // we will try more() again
       }
       BSONObj o = c->next();
