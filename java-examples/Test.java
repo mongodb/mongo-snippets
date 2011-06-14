@@ -7,6 +7,9 @@
 import com.mongodb.*;
 
 /**
+ * Tests the exceptions thrown by the Java client when replica set members failover and
+ * are restarted.  Runs in a loop, trying various operations using various WriteConcerns.
+ *
  * Assumes a replica set is available for connections.  On your local machine, this can be
  * started from the shell with:
  *
@@ -20,6 +23,8 @@ import com.mongodb.*;
  * PRIMARY|SECONDARY> rst.stop( 2 ) // assumes 0 is primary
  * PRIMARY|SECONDARY> rst.stop( 1 )
  * PRIMARY|SECONDARY> rst.stop( 0 )
+ *
+ * The above requires mongod available in your OS path for execution
  *
  */
 public class Test {
