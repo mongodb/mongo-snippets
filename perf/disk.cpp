@@ -67,47 +67,88 @@ unsigned long long align( unsigned long long val ) {
     return ( val >> 9 ) << 9;
 }
 
+struct Setup {
+    int fd;
+    bool active;
+};
+
+
+
+
+void* randomReads_thread( void * raw ) {
+    unsigned long long total = 0;
+
+    char x[1024];
+    char* y = (char*)align( (unsigned long long)(x+513) );
+    
+    Setup * setup = (Setup*)raw;
+    while ( setup->active ) {
+        int r = pread( setup->fd , y , 512 , align( rand() % fileSize ) );
+        if ( r < 1 ) {
+            cout << strerror( errno ) << endl;
+        }
+        total++;
+    }
+    
+    pthread_exit( (void*)total );
+}
+
 /**
  * @return reads/sec
  */
-double randomReads( const string& file , int seconds ) {
-    int fd = open( file.c_str() , O_DIRECT | O_RDONLY | O_NOATIME , S_IRUSR | S_IWUSR );
-    if ( fd <= 0 )
+double randomReads( const string& file , int seconds , int numThreads ) {
+    
+    Setup setup;
+    
+    setup.fd = open( file.c_str() , O_DIRECT | O_RDONLY | O_NOATIME , S_IRUSR | S_IWUSR );
+    if ( setup.fd <= 0 )
         cout << strerror(errno) << endl;
-    assert( fd > 0 );    
+    assert( setup.fd > 0 );    
     
-    char x[1024];
+    setup.active = true;
     
-    char* y = (char*)align( (unsigned long long)(x+513) );
+    pthread_t threads[numThreads];
     
-    double total = 0;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    
 
     double start = curTimeMillis64();
-    double end = 0;
-
-    for ( int i=0; i<1000; i++ ) {
-        for ( int j=0; j<1000; j++ ) {
-            int r = pread( fd , y , 512 , align( rand() % fileSize ) );
-            if ( r < 1 ) {
-                cout << strerror( errno ) << endl;
-            }
-            total++;
+    
+    for ( int i=0; i<numThreads; i++ ) {
+        if ( pthread_create( &threads[i] , &attr , randomReads_thread , (void*)&setup ) ) {
+            cerr << "pthread_create failed" << endl;
+            throw 1;
         }
+    }
+    
+    sleep( seconds );
+    setup.active = false;
+    
+    double total = 0;
+    for ( int i=0; i<numThreads; i++ ) {
+        void * result;
+        int rc = pthread_join( threads[i] , &result );
+        total += (unsigned long long)result;
         
-        end = curTimeMillis64();
-        if ( ( end - start ) > ( seconds * 1000 ) )
-            break;
     }
 
-    close(fd);
+    double end = curTimeMillis64();
     
-    return ( 1000 * total / ( end - start ) );
+
+    double result = ( 1000 * total / ( end - start ) );
+
+    close(setup.fd);
+    
+    return result;
 }
 
 int main( int argc , char* argv[] ) {
     
     string dbpath = "/data/db/";
     int seconds = 10;
+    int threads = 10;
     
     fileSize = 512 * 1024 * 1024;
 
@@ -129,14 +170,24 @@ int main( int argc , char* argv[] ) {
             continue;
         }
 
+        if ( strcmp( argv[i] , "--threads" ) == 0 ) {
+            if ( i + 1 == argc )
+                return usage();
+            threads = atoi( argv[i+1] );
+            i++;
+            continue;
+        }
+
+
         cout << "unknown option: " << argv[i] << endl;
         return usage();
     }
 
     // --- print setup
     
-    cout << "dbpath:\t" << dbpath << endl;
+    cout << "dbpath: \t" << dbpath << endl;
     cout << "seconds:\t" << seconds << endl;
+    cout << "threads:\t" << threads << endl;
     
     // ----------  run the test ------------
 
@@ -144,6 +195,6 @@ int main( int argc , char* argv[] ) {
     createFile( file );
 
 
-    cout << " ops/sec: " << randomReads(file,2) << endl;
+    cout << " ops/sec: " << randomReads(file,seconds,threads) << endl;
 
 }
