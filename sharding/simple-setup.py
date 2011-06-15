@@ -100,6 +100,7 @@ RESET = 0
 INVERSE = 7
 
 if os.path.exists(BASE_DATA_PATH):
+    print( "removing tree: %s" % BASE_DATA_PATH )
     shutil.rmtree(BASE_DATA_PATH)
 
 mongod = MONGO_PATH + 'mongod'
