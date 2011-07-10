@@ -25,8 +25,10 @@ o = { x : 1, y : 2, z : str};
 
 start= new Date();
 
-for( i = 0; i < N; i++ )
-	t.insert(o);
+for( i = 0; i < N; i++ ) {
+    o.y = i;
+    t.insert(o);
+}
 
 print( t.count() );
 
