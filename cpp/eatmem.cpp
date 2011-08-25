@@ -1,4 +1,12 @@
-// g++ eatmem.cpp
+/** to compile: g++ -o eatmem eatmem.cpp
+
+    this utility reserves an amount of memory from physical ram (by locking it) 
+    which is then unavailable for use by other processes including the file system 
+    cache.  this can be used to verify that a given system can run with less RAM
+    than the total capacity of the server.  this could be used simply for testing 
+    or run continuously in production; if the latter, one would kill it if more 
+    memory were needed on an emergency basis.
+*/
 
 #include <iostream>
 #include <stdlib.h>
