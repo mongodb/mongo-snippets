@@ -37,25 +37,46 @@ function reset(x) {
     x.n = 0;
     x.t = 0;
     x.min = 100000;
+    x.slow = 0;
 }
 
 function say(res) { 
-    print(Date() + '  ' + res.min + ' / ' + Math.round(100*res.t/res.n)/100 + ' / ' + res.max);
+    print(Date() + '  ' + res.min + ' / ' + Math.round(100*res.t/res.n)/100 + ' / ' + res.max + ' / ' + res.slow);
 }
 
 function test(query, result) { 
     var ms = time( function() { t.findOne(query) } );
     if( ms < result.min ) result.min = ms;
     if( ms > result.max ) result.max = ms;
+    if( ms > 2 ) result.slow++;
     result.n++;
     result.t += ms;
 }
+
+print();
+print("collection: " + coll);
+print("count: " + t.count());
+print("query:");
+printjson(query);
+print("indexes:");
+printjson( t.getIndexes() );
+
+print("explain:");
+printjson( t.find(query).limit(1).explain() );
+
+var N = 200;
+print("N : " + N);
+
+print();
+print(Date() + '  min / avg / max / n>2ms');
+print();
+
 
 while( 1 ) { 
     reset(basecase);
     reset(querycase);
     try { 
-	for( var i = 0; i < 500; i++ ) { 
+	for( var i = 0; i < N; i++ ) { 
 	    test({}, basecase);
 	    test(query, querycase);
 	    sleep(10);
