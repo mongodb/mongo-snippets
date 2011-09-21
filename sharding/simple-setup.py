@@ -28,7 +28,7 @@ MONGO_PATH=os.getenv( "MONGO_HOME" , os.path.expanduser('~/10gen/mongo/') )
 N_SHARDS=3
 N_CONFIG=1 # must be either 1 or 3
 N_MONGOS=1
-CHUNK_SIZE=200 # in MB (make small to test splitting)
+CHUNK_SIZE=64 # in MB (make small to test splitting)
 MONGOS_PORT=27017 if N_MONGOS == 1 else 10000 # start at 10001 when multi
 
 CONFIG_ARGS=[]
