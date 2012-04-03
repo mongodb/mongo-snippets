@@ -30,6 +30,7 @@ N_CONFIG=1 # must be either 1 or 3
 N_MONGOS=1
 CHUNK_SIZE=64 # in MB (make small to test splitting)
 MONGOS_PORT=27017 if N_MONGOS == 1 else 10000 # start at 10001 when multi
+USE_SSL=False # set to True if running with SSL enabled
 
 CONFIG_ARGS=[]
 MONGOS_ARGS=[]
@@ -202,7 +203,7 @@ for i in range(1, N_SHARDS+1):
 #this must be done before starting mongos
 for config_str in configs:
     host, port = config_str.split(':')
-    config = pymongo.Connection(host, int(port)).config
+    config = pymongo.Connection(host, int(port), ssl=USE_SSL).config
     config.settings.save({'_id':'chunksize', 'value':CHUNK_SIZE}, safe=True)
 del config #don't leave around connection directly to config server
 
@@ -218,7 +219,7 @@ for i in range(1, N_MONGOS+1):
 
     waitfor(router, MONGOS_PORT + i)
 
-conn = pymongo.Connection('localhost', MONGOS_PORT + 1)
+conn = pymongo.Connection('localhost', MONGOS_PORT + 1, ssl=USE_SSL)
 admin = conn.admin
 
 for i in range(1, N_SHARDS+1):
