@@ -40,6 +40,12 @@ parser.add_option("--port", type="int",
                   help="First port number to use (%default)", default=27017)
 parser.add_option("--name",
                   help="Replica set name (%default)", default="foo")
+parser.add_option("--ssl",
+				  help="SSL enabled (%default)", default="False")
+parser.add_option("--ssl_path",
+				  help="Path to SSL PEM cert/key (%default)", default="/data/db/mongocert.pem")
+parser.add_option("--ssl_pass",
+				  help="Password for SSL PEM cert/key (%default)", default="mongo")
 (options, args) = parser.parse_args()
 if args:
     print("error: no positional arguments accepted")
@@ -62,6 +68,14 @@ if not os.path.exists( mongod ):
     
     if not os.path.exists( mongod ):
         raise Exception( "can't find mongod" )
+
+# check whether SSL is enabled, if it is then set the SSL variable to True
+# simplifies things later on
+if options.ssl == "True":
+    SSL = True
+else:
+    SSL = False
+
 
 # Just get a different color code to use based on n.
 # See http://pueblo.sourceforge.net/doc/manual/ansi_color_codes.html
@@ -143,10 +157,12 @@ for i in range(options.set_size):
     seed = options.name + "/" + ",".join(nodes)
 
     command = [mongod, "--port", port, "--dbpath", path, "--replSet", seed, "--rest"]
+    if SSL:
+        command += ["--sslOnNormalPorts", "--sslPEMKeyFile", str(options.ssl_path), "--sslPEMKeyPassword", str(options.ssl_pass)]
     if i < options.arbiters:
         command += ["--oplogSize", "1"]
         prefix = "A" + str(i)
-    else:
+    else: 
         command += ["--oplogSize", str(options.oplog_size)]
         prefix = "R" + str(i - options.arbiters)
     node = Popen(command, stdout=PIPE, stderr=STDOUT)
@@ -167,10 +183,10 @@ for i in range(len(nodes)):
 
 sleep(10)
 # Last node won't be an arbiter, so use that for initiate
-Connection(nodes[-1], slave_okay=True).admin.command("replSetInitiate", config)
+Connection(nodes[-1], slave_okay=True, ssl=SSL).admin.command("replSetInitiate", config)
 while (True):
     try:
-        print Connection(nodes).admin.command("replSetGetStatus")
+        print Connection(nodes, ssl=SSL).admin.command("replSetGetStatus")
         break
     except AutoReconnect:
         sleep(1)
