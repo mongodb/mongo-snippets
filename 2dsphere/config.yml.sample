@@ -1,0 +1,5 @@
+geo_collection:
+    host: localhost
+    db_name: geo
+    collection_name: ny
+    port: 27018
