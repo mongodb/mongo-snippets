@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-import logging
 import web
 import pymongo
 import simplejson as json
 import yaml
 
-_logger = logging.getLogger(__name__)
 _here = os.path.dirname(os.path.abspath(__file__))
 _config_file = file(os.path.join(_here, 'config.yml'), 'r')
 
@@ -18,6 +16,8 @@ conn = pymongo.connection.Connection(geo_collection['host'], port=geo_collection
 
 db = conn[geo_collection['db_name']]
 
+db.write_concern = {'w': 1}
+
 class GeoDemo(object):
 
     def GET(self):
@@ -28,11 +28,11 @@ class WithinSearch(object):
 
     def GET(self):
         collection = db[geo_collection['collection_name']]
+        # Web.py doesn't support arrays of objects, so we use two 
+        # arrays, one with lats, one with lngs.
         input = web.input(point_lats=[], point_lngs=[])
-        print "Input: {0}".format(input)
         point_lats = input['point_lats']
         point_lngs = input['point_lngs']
-        print "Points: {0}, {1}".format(point_lats, point_lngs)
         poly = {
             "type": "Polygon",
             "coordinates": []
@@ -42,10 +42,10 @@ class WithinSearch(object):
             final_points.append([float(point_lngs[i]), float(point_lats[i])])
         final_points.append([float(point_lngs[0]), float(point_lats[0])])
         poly['coordinates'].append(final_points)
-        within = collection.find({
-            "geo": { "$within": {"$geometry": poly} }
-            }, {"_id": False, "name": True, "geo": True})
-        within.limit(50)
+        # don't bring back _id, because it makes json encoding uglier.
+        within = collection.find({"geo": { "$within": {"$geometry": poly} } }, 
+                {"_id": False, "name": True, "geo": True})
+        within.limit(500)
         found = within.count()
         places = [place for place in within]
         return json.dumps(places)
