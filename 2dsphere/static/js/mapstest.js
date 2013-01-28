@@ -1,5 +1,6 @@
 function init(){
-    /* These lists are used for storing the map elements we store on the map
+    /*
+     * These lists are used for storing the map elements we store on the map
      * so that we can clean them up between searches
      */
     var pointList = [];
@@ -15,6 +16,7 @@ function init(){
     var map = new google.maps.Map(document.getElementById("map"), mapOptions);
 
     function clearMap(){
+        //Clear global polygon object
         if(polygon != undefined){
             polygon.setMap(null);
         }
@@ -66,16 +68,16 @@ function init(){
     }
     function drawPoint(coordinate, name){
         var marker = new google.maps.Marker({
-            position: new google.maps.LatLng(coordinate[1], coordinate[0])
+            position: new google.maps.LatLng(coordinate[1], coordinate[0]),
+            icon: "static/images/point.gif"
         });
         marker.setMap(map);
         google.maps.event.addListener(marker, 'click', function(){
             clearInfos();
-            opts = {
+            info = new google.maps.InfoWindow({
                 position: marker.getPosition(),
                 content: name
-            }
-            info = new google.maps.InfoWindow(opts);
+            });
             info.open(map);
             infoList.push(info);
         });
@@ -117,10 +119,9 @@ function init(){
         pointList.push(event.latLng);
         if(pointList.length < 3){
             //If there aren't yet 3 points on the map, draw markers.
-            markerOptions = {
+            marker = new google.maps.Marker({
                 position: event.latLng
-            };
-            marker = new google.maps.Marker(markerOptions);
+            });
             marker.setMap(map);
             markerList.push(marker);
         }else{
