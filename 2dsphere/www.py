@@ -24,35 +24,55 @@ class GeoDemo(object):
         return render.mapstest()
 
 
-class WithinSearch(object):
+class GeoSearch(object):
 
     def GET(self):
         collection = db[geo_collection['collection_name']]
         # Web.py doesn't support arrays of objects, so we use two 
         # arrays, one with lats, one with lngs.
         input = web.input(point_lats=[], point_lngs=[])
+        mode = input['mode']
         point_lats = input['point_lats']
         point_lngs = input['point_lngs']
-        poly = {
-            "type": "Polygon",
-            "coordinates": []
-        }
         final_points = []
         for i in range(0, len(point_lats)):
             final_points.append([float(point_lngs[i]), float(point_lats[i])])
-        final_points.append([float(point_lngs[0]), float(point_lats[0])])
-        poly['coordinates'].append(final_points)
         # don't bring back _id, because it makes json encoding uglier.
-        within = collection.find({"geo": { "$within": {"$geometry": poly} } }, 
-                {"_id": False, "name": True, "geo": True})
-        within.limit(500)
-        found = within.count()
-        places = [place for place in within]
+        if mode == "$within":
+            final_points.append(final_points[0])
+            poly = {
+                "type": "Polygon",
+                "coordinates": [final_points]
+            }
+            within = collection.find({"geo": { "$within": {"$geometry": poly} } }, 
+                    {"_id": False, "name": True, "geo": True})
+            within.limit(500)
+            places = [place for place in within]
+        elif mode == "$geoIntersects":
+            line = {
+                    "type": "LineString",
+                    "coordinates": final_points
+                    }
+            inter = collection.find({"geo": { "$geoIntersects": {"$geometry": line} } },
+                    {"_id": False, "name": True, "geo": True})
+            inter.limit(50)
+            print line
+            places = [place for place in inter]
+        elif mode == "$near":
+            point = {
+                    "type": "Point",
+                    "coordinates": final_points[0]
+                    }
+            near = collection.find({"geo": { "$near": {"$geometry": point} } }, 
+                    {"_id": False, "name": True, "geo": True})
+            near.limit(10)
+            places = [place for place in near]
+
         return json.dumps(places)
 
 urls = (
     "/", GeoDemo,
-    "/withinSearch", WithinSearch
+    "/geoSearch", GeoSearch
     )
 
 # setup web env
