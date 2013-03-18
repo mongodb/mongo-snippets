@@ -1,6 +1,19 @@
 # encoding: utf-8
 
-"""MongoDB utility functions for consuming a capped collection as a queue."""
+"""MongoDB utility functions for consuming a capped collection as a queue.
+
+The code herein allows automatic construction of capped collections and consumption of records from a capped collection
+in an efficient way, reminiscent of a queue.  Makes use of Python generator functions (yield syntax) such that the
+result of calling queue() may be iterated over in a for loop, or be explicitly consumed by repeated calls to next(q).
+
+This was used as the basis for a light-weight remote RPC (both immediate and scheduled) system similar to Celery.
+
+Careful attention must be paid to the size of the desired capped collection; it must be large enough such that no items
+get lost before they are processed by a consumer, with headroom for growth and headroom based on the amount of
+historical information your use case requires.  The full RPC system that was built around this utilized a standard
+collection for storage of task data (function to call, arguments, return value, exceptional state, etc.), allowing the
+capped collection to be easily repopulated by iterating over incomplete tasks.
+"""
 
 from pymongo.errors import OperationFailure
 
