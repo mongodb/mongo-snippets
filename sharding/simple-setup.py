@@ -140,7 +140,7 @@ def waitfor(proc, port):
                 s.connect(('localhost', port))
                 return
             except (IOError, error):
-                sleep(5)
+                sleep( 5 )
         finally:
             s.close()
 
