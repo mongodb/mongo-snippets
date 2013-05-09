@@ -1,5 +1,5 @@
 venv
 *.osm
-node.json
+nodes.json
 nodedict
 config.yml

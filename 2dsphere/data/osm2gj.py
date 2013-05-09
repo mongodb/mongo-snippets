@@ -9,7 +9,7 @@ import json
 
 infile = "map.osm"
 write_only_named = True
-write_nodes_and_quit = False
+write_nodes_and_quit = True
 write_ways_and_quit = True
 
 node_id = ""
