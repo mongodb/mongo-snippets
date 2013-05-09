@@ -1,1 +1,5 @@
 venv
+*.osm
+node.json
+nodedict
+config.yml
