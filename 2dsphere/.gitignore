@@ -1,5 +1,7 @@
 venv
 *.osm
 nodes.json
+lines.json
+polygons.json
 nodedict
 config.yml

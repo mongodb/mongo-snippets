@@ -23,7 +23,7 @@ def makePoint(lon, lat):
     retVal = {}
     retVal["type"] = "Point"
     retVal["coordinates"] = [float(lon), float(lat)]
-    #return [float(lon), float(lat)]
+    #retVal = [float(lon), float(lat)]
     return retVal
 
 if write_nodes_and_quit:
@@ -41,10 +41,10 @@ if write_nodes_and_quit:
         if "node" == name:
             global node_id
             global node_attr
-            if write_only_named and not node_attr.has_key('name'):
-                return
-            if len(node_attr['name']) <= 1:
-                return
+            # if write_only_named and not node_attr.has_key('name'):
+            #     return
+            # if len(node_attr['name']) <= 1:
+            #     return
             outputkv = node_attr
             outputkv['geo'] = makePoint(nodes[node_id][0], nodes[node_id][1])
             outputkv['nodeid'] = "n" + node_id
