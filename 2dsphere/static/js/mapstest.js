@@ -3,12 +3,13 @@ function init(){
      * These lists are used for storing the map elements we store on the map
      * so that we can clean them up between searches
      */
-    var pointList = [];
+    var pointLists = [[]];
+    var pointList = pointLists[0];
     var markerList = [];
     var infoList = [];
     var lineList = [];
-    var polygon = undefined;
-    var line = undefined;
+    var polygons = [];
+    var lines = [];
     var mapOptions = {
         center: new google.maps.LatLng(40.663973,-73.947807), //Brooklyn!
         zoom: 12,
@@ -16,6 +17,7 @@ function init(){
     };
     var map = new google.maps.Map(document.getElementById("map"), mapOptions);
     var mode = "$within";
+    var polymode = "polygon";
     setupCustomControls();
     function setupCustomControls(){
         var controlDiv = setupOptionsControl();
@@ -40,21 +42,106 @@ function init(){
         for(var i = 0; i < options.length; i++){
             createOption(options[i], $controlDiv);
         }
+        var geos = ["line", "polygon"];
+        for(var i = 0; i < geos.length; i++) {
+            addGeoButton(geos[i], $controlDiv);
+        }
+        addPlusButton("+", $controlDiv);
         return controlDiv;
     }
     function createOption(option, $controlDiv){
         var controlUI = createButton(option, $controlDiv, mode === option);
         google.maps.event.addDomListener(controlUI, 'click', function(){
             mode = option;
-            $(".maps-ui").removeClass("maps-ui-control-select");
+            $(".maps-ui-options").css("background-color", "#ffffff");
+            $(".maps-ui-options").removeClass("maps-ui-control-select");
+            $(controlUI).css("background-color", "#e0e0e0");
             $(controlUI).addClass("maps-ui-control-select");
             clearMapAndInteractions();
+
+            // toggle geometry buttons
+            if (option != "$geoIntersects") {
+                $(".maps-ui-geo-button").hide();
+            }
+            else {
+                $(".maps-ui-geo-button").show();
+            }
+
+            // set correct shape mode
+            if (mode == "$within") polymode = "polygon";
+            if (mode == "$near") polymode = "point";
+            if (mode == "$geoIntersects") {
+                polymode = "line";
+                $(".maps-ui-geo-button").css("background-color", "#ABE096");
+                $(".maps-ui-geo-button-line").css("background-color", "#83BA6E");
+            }
+
+            // reset the pointlists
+            pointLists = [[]];
+            pointList = pointLists[0];
+        });
+        if (option == "$within") {
+            $(controlUI).css("background-color", "#e0e0e0");
+        }
+    };
+    function addGeoButton(option, $controlDiv) {
+        // when a user clicks, set some polymode
+        var controlUI = document.createElement('div');
+        var $controlUI = $(controlUI);
+        $controlUI.addClass("maps-ui");
+        $controlUI.addClass("maps-ui-geo-button");
+        $controlUI.css("background-color", "#ABE096");
+        $controlUI.hide(); // hide unless in $geoIntersect mode
+        $controlUI.text(option);
+        $controlDiv.append($controlUI);
+
+        google.maps.event.addDomListener(controlUI, 'click', function(){
+                $(".maps-ui-geo-button").css("background-color", "#ABE096");
+                $(controlUI).css("background-color", "#83BA6E");
+                newGeometry(polymode);
+                polymode = option;
+                console.log("polymode: " + polymode);
+        });
+        if (option == "line") {
+            $controlUI.css("background-color", "#83BA6E");
+            $controlUI.addClass("maps-ui-geo-button-line");
+        }
+        return controlUI;
+    };
+    function newGeometry(type) {
+        // type is the kind of the previous geometry, to be closed.
+        var length = pointList.length;
+        if (length == 0) return;
+
+        // if incomplete polygon, degenerate into line
+        if (type == "polygon" && length > 2) {
+            pointList.push(pointList[0]); // close the polygon
+        }
+        pointLists.push([]);
+        pointList = pointLists[pointLists.length - 1];
+    };
+
+    function addPlusButton(option, $controlDiv) {
+        // when user clicks, start new path in same query
+        var controlUI = document.createElement('div');
+        var $controlUI = $(controlUI);
+        $controlUI.addClass("maps-ui");
+        $controlUI.addClass("maps-ui-plus-button");
+        $controlUI.text(option);
+        $controlUI.css("background-color", "#F7EC97");
+        $controlDiv.append($controlUI);
+
+        google.maps.event.addDomListener(controlUI, 'click', function(){
+                if (mode == "$near") return;
+                if (pointList.length == 0) return;
+                newGeometry(polymode);
         });
     }
     function createButton(text, $wrapperDiv, selected){
         var controlUI = document.createElement('div');
         var $controlUI = $(controlUI);
         $controlUI.addClass("maps-ui");
+        $controlUI.addClass("maps-ui-options");
         $controlUI.text(text);
         $wrapperDiv.append($controlUI);
         if (selected){
@@ -63,17 +150,20 @@ function init(){
         return controlUI;
     }
     function clearMapAndInteractions(){
-        pointList = [];
+        pointLists = [[]];
+        pointList = pointLists[0];
         clearMap();
     }
     function clearMap(){
-        //Clear global polygon object
-        if(polygon != undefined){
-            polygon.setMap(null);
+        // Clear global polygon and line objects
+        for (var i = 0; i < polygons.length; i++) {
+            polygons[i].setMap(null);
         }
-        if(line != undefined){
-            line.setMap(null);
+        polygons = [];
+        for (var i = 0; i < lines.length; i++) {
+            lines[i].setMap(null);
         }
+        lines = [];
         clearInfos();
         clearMarkers();
         clearLines();
@@ -98,38 +188,73 @@ function init(){
         }
         lineList = [];
     }
-    function drawPolygon(){
+    function drawPolygon(list){
+        console.log("drawing polygon on " + list);
         polyOptions = {
-            paths: pointList,
+            paths: list,
             strokeColor: '#0000000',
             strokeOpacity: 0.8,
             fillOpacity: 0.0
         };
-        polygon = new google.maps.Polygon(polyOptions);
-        polygon.setMap(map);
+        var newgon = new google.maps.Polygon(polyOptions);
+        polygons.push(newgon);
+        newgon.setMap(map);
     }
-    function drawSearchLine(){
-        line = new google.maps.Polyline({
-            path: pointList,
+    function drawSearchLine(list){
+        options = {
+            path: list,
             strokeColor: "#000000",
             strokeOpacity: 1.0,
             strokeWeight: 2
-        });
-        line.setMap(map);
+        };
+        var newline = new google.maps.Polyline(options);
+        lines.push(newline);
+        newline.setMap(map);
+    }
+    function drawSearchPoint(coords) {
+        var marker = new google.maps.Marker({
+                position:coords
+            });
+        marker.setMap(map);
+        markerList.push(marker);
     }
     function queryString(){
         // This is a pretty lousy way to encode these points, but
         // web.py is awkward with array parsing, and this is a
         // quick and dirty way around that.
         var queryString = "?mode=" + mode + "&";
-        for(i=0; i < pointList.length; i++){
-            if(i != 0){ queryString += "&"}
-            queryString += "point_lats=" + pointList[i].lat() + "&";
-            queryString += "point_lngs=" + pointList[i].lng()
+        queryString += "path_count=" + pointLists.length;
+        for (var j = 0; j < pointLists.length; j++) {
+            queryString += "&";
+            var list = pointLists[j];
+
+            // close current polygon
+            if ((j == pointLists.length - 1) &&
+                (mode == "$within" || polymode == "polygon")) {
+                queryString += "length_" + j + "=" + (list.length + 1) + "&";
+                for(i=0; i < list.length; i++){
+                    if(i != 0){ queryString += "&"}
+                    queryString += "point_lats=" + list[i].lat() + "&";
+                    queryString += "point_lngs=" + list[i].lng();
+                }
+                queryString += "&";
+                queryString += "point_lats=" + list[0].lat() + "&";
+                queryString += "point_lngs=" + list[0].lng();
+            }
+            else {
+                queryString += "length_" + j + "=" + list.length + "&";
+                for(i=0; i < list.length; i++){
+                    if(i != 0){ queryString += "&"}
+                    queryString += "point_lats=" + list[i].lat() + "&";
+                    queryString += "point_lngs=" + list[i].lng();
+                }
+            }
         }
+        console.log(queryString);
         return queryString;
     }
     function drawPoint(coordinate, name){
+        // results from the query
         var marker = new google.maps.Marker({
             position: new google.maps.LatLng(coordinate[1], coordinate[0]),
             icon: "static/images/point.gif"
@@ -147,6 +272,7 @@ function init(){
         markerList.push(marker);
     }
     function drawLine(coordinates){
+        // results from the query
         var linePath = [];
         var line;
         var point;
@@ -176,51 +302,77 @@ function init(){
             }
         }
     }
-    google.maps.event.addListener(map, 'click', function(event){
-        if(mode === "$within"){
-            pointList.push(event.latLng);
-            var marker;
-            if(pointList.length < 3){
-                //If there aren't yet 3 points on the map, draw markers.
-                marker = new google.maps.Marker({
-                    position: event.latLng
-                });
-                marker.setMap(map);
-                markerList.push(marker);
-            }else{
-                //We have a polygon!
-                clearMap();
-                drawPolygon();
-                $.getJSON("geoSearch" + queryString(), drawMapData);
+    function isPolygon(list) {
+        // just to be super careful...
+        var p1 = list[0];
+        var p2 = list[list.length - 1];
+        if (p1.lat() != p2.lat()) return false;
+        if (p1.lng() != p2.lng()) return false;
+        return true;
+    }
+    function drawAllClosedPaths() {
+        // does not handle open path (in pointList)
+        for (var i = 0; i < (pointLists.length - 1); i++) {
+            var length = pointLists[i].length;
+            if (length == 1) {
+                drawSearchPoint(pointLists[i][0]);
             }
-        }else if(mode === "$geoIntersects"){
-            pointList.push(event.latLng);
-            if(pointList.length < 2){
-                //If there aren't yet 2 points on the map, draw markers.
-                marker = new google.maps.Marker({
-                    position: event.latLng
-                });
-                marker.setMap(map);
-                markerList.push(marker);
-            }else{
-                //We have a line!
-                clearMap();
-                drawSearchLine();
-                $.getJSON("geoSearch" + queryString(), drawMapData);
+            else if (length == 2) {
+                drawSearchLine(pointLists[i]);
             }
-        }else if(mode === "$near"){
-            clearMap();
-            if(pointList.length >= 1){
-                pointList = [];
+            else {
+                if (isPolygon(pointLists[i])) {
+                    drawPolygon(pointLists[i]);
+                }
+                else {
+                    drawSearchLine(pointLists[i]);
+                }
             }
-            pointList.push(event.latLng);
-            marker = new google.maps.Marker({
-                position: event.latLng
-            });
-            marker.setMap(map);
-            markerList.push(marker);
-            $.getJSON("geoSearch" + queryString(), drawMapData);
         }
-    });
+    }
+
+    google.maps.event.addListener(map, 'click', function(event){
+            // $near: toss previous shapes, draw current point, query
+            // $within: draw existing gons, draw current gon, run query
+            // $geoIntersects: check mode:
+            //       polygon: draw existing shapes, current shape, run query
+            //       line: draw existing shapes, current shape, run query
+            //       point: draw existing shapes, current shape, close current shape, query
+            if(mode == "$within" || polymode == "polygon"){
+                pointList.push(event.latLng);
+                if(pointList.length < 3){
+                    //If there aren't yet 3 points on the map, draw markers.
+                    drawSearchPoint(event.latLng);
+                }else{
+                    //We have a polygon!
+                    clearMap();
+                    drawAllClosedPaths();
+                    drawPolygon(pointList);
+                    $.getJSON("geoSearch" + queryString(), drawMapData);
+                }
+            }
+            else if(polymode === "line"){
+                pointList.push(event.latLng);
+                if(pointList.length < 2){
+                    //If there aren't yet 2 points on the map, draw markers.
+                    drawSearchPoint(event.latLng);
+                }
+                else{
+                    //We have a line!
+                    clearMap();
+                    drawAllClosedPaths();
+                    drawSearchLine(pointList);
+                    $.getJSON("geoSearch" + queryString(), drawMapData);
+                }
+            }
+            else if(mode === "$near") {
+                clearMap();
+                pointLists = [[]];
+                pointList = pointLists[0]
+                pointList.push(event.latLng);
+                drawSearchPoint(event.latLng);
+                $.getJSON("geoSearch" + queryString(), drawMapData);
+            }
+        });
 
 }
