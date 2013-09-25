@@ -70,7 +70,11 @@ function init(){
 			// set correct shape mode
 			if (mode == "$within") polymode = "polygon";
 			if (mode == "$near") polymode = "point";
-			//		if (mode == "$geoIntersects") polymode = "line";
+			if (mode == "$geoIntersects") {
+				polymode = "line";
+				$(".maps-ui-geo-button").css("background-color", "#ABE096");
+				$(".maps-ui-geo-button-line").css("background-color", "#83BA6E");
+			}
 
 			// reset the pointlists
 			pointLists = [[]];
@@ -98,7 +102,10 @@ function init(){
 				polymode = option;
 				console.log("polymode: " + polymode);
         });
-		if (option == "line") $(controlUI).css("background-color", "#83BA6E");
+		if (option == "line") {
+			$controlUI.css("background-color", "#83BA6E");
+			$controlUI.addClass("maps-ui-geo-button-line");
+		}
         return controlUI;
 	};
 	function newGeometry(type) {
