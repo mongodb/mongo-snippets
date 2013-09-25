@@ -63,12 +63,14 @@ function init(){
 			if (option != "$geoIntersects") {
 				$(".maps-ui-geo-button").hide();
 			}
-			else $(".maps-ui-geo-button").show();
+			else {
+				$(".maps-ui-geo-button").show();
+			}
 
 			// set correct shape mode
 			if (mode == "$within") polymode = "polygon";
 			if (mode == "$near") polymode = "point";
-			if (mode == "$geoIntersects") polymode = "line";
+			//		if (mode == "$geoIntersects") polymode = "line";
 
 			// reset the pointlists
 			pointLists = [[]];

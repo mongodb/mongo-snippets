@@ -72,23 +72,59 @@ class GeoSearch(object):
             within.limit(500)
             places = [place for place in within]
         elif mode == "$geoIntersects":
-            # step 1: make everything a geo collection
+            coll = {}
             geometries = []
+            paths = [0, 0, 0] # point, line, polygon
             for i in range(0, path_count):
                 doc = {}
-                if len(final_points[i]) == 1:
+                if len(final_points[i]) == 1: # right now, $geoIntersects will never give points
                     doc["type"] = "Point"
                     doc["coordinates"] = final_points[i][0]
+                    paths[0] += 1
                 elif is_polygon(final_points[i]):
                     doc["type"] = "Polygon"
                     doc["coordinates"] = [final_points[i]]
+                    paths[2] += 1
                 else:
                     doc["type"] = "LineString"
                     doc["coordinates"] = final_points[i]
+                    paths[1] += 1
                 geometries.append(doc)
-            # step 2: add logic to find things that are all one type
-            # step 3: make multipoint, multiline, multigon docs.
-            coll = {
+
+            # MultiPoint?
+            # NOTE: right now this will never happen.
+            if paths[0] == path_count:
+                print "fielding MultiPoint"
+                coords = []
+                for i in range(0, path_count):
+                    coords.append(final_points[i][0])
+                coll = {
+                    "type" : "MultiPoint",
+                    "coordinates" : coords
+                    }
+            # MultiLineString?
+            elif paths[1] == path_count:
+                print "fielding MultiLineString"
+                coords = []
+                for i in range(0, path_count):
+                    coords.append(final_points[i])
+                coll = {
+                    "type" : "MultiLineString",
+                    "coordinates" : coords
+                    }
+            # MultiPolygon?
+            elif paths[2] == path_count:
+                print "fielding MultiPolygon"
+                coords = []
+                for i in range(0, path_count):
+                    coords.append([final_points[i]])
+                coll = {
+                    "type" : "MultiPolygon",
+                    "coordinates" : coords
+                    }
+            else:
+                print "fielding GeometryCollection"
+                coll = {
                     "type": "GeometryCollection",
                     "geometries": geometries
                     }
