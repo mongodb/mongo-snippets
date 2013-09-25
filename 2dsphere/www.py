@@ -95,7 +95,6 @@ class GeoSearch(object):
             inter = collection.find({"geo": { "$geoIntersects": {"$geometry": coll} } },
                     {"_id": False, "name": True, "geo": True})
             inter.limit(50)
-#            print geometries
             places = [place for place in inter]
         elif mode == "$near":
             point = {

@@ -64,7 +64,11 @@ function init(){
 				$(".maps-ui-geo-button").hide();
 			}
 			else $(".maps-ui-geo-button").show();
+
+			// set correct shape mode
 			if (mode == "$within") polymode = "polygon";
+			if (mode == "$near") polymode = "point";
+			if (mode == "$geoIntersects") polymode = "line";
 
 			// reset the pointlists
 			pointLists = [[]];
@@ -92,6 +96,7 @@ function init(){
 				polymode = option;
 				console.log("polymode: " + polymode);
         });
+		if (option == "line") $(controlUI).css("background-color", "#83BA6E");
         return controlUI;
 	};
 	function newGeometry(type) {
@@ -324,7 +329,6 @@ function init(){
 			//       polygon: draw existing shapes, current shape, run query
 			//       line: draw existing shapes, current shape, run query
 			//       point: draw existing shapes, current shape, close current shape, query
-
 			if(mode == "$within" || polymode == "polygon"){
 				pointList.push(event.latLng);
 				if(pointList.length < 3){
@@ -354,9 +358,8 @@ function init(){
 			}
 			else if(mode === "$near") {
 				clearMap();
-				if(pointList.length >= 1){
-					pointList = [];
-				}
+				pointLists = [[]];
+				pointList = pointLists[0]
 				pointList.push(event.latLng);
 				drawSearchPoint(event.latLng);
 				$.getJSON("geoSearch" + queryString(), drawMapData);
