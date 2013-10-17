@@ -7,11 +7,20 @@ This simple test requires you have a running mongod loaded with whatever geo dat
  * mongod 2.3.2 or higher
  * python 2.6 or higher
 
+### Setting up MongoDB
+Create a database named geo with a collection called ny if you're loading the ny data.
+Create an index on geo using this command:
+    db.ensureIndex( { geo : '2dsphere' } )
+    
+This needs to be done before loading data due to some issues with some of the objects.
+
 ### Loading the geo data
 
 Inside the data directory of this project's root there are three files containing geojson data for ny state.  Use the mongoimport application to import this geo data.  In this case we're using a database called `geo` and a collection called `ny`.  Run this command once for each file `ny-lines.json`, `ny-nodes.json`, and `ny-polygons.json`
 
     $ mongoimport -d geo -c ny --file data/ny-lines.json
+    $ mongoimport -d geo -c ny --file data/ny-nodes.json
+    $ mongoimport -d geo -c ny --file data/ny-polygons.json
 
 ### Setup the python requirements
 
