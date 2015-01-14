@@ -1,0 +1,20 @@
+{
+  "edges" : [
+    {"_id":1,"weight":0.2,"_type":"edge","_outV":1,"_inV":2,"_label":"emailed"},
+    {"_id":2,"weight":1,"_type":"edge","_outV":1,"_inV":4,"_label":"called"},
+    {"_id":3,"weight":0.6,"_type":"edge","_outV":2,"_inV":3,"_label":"called"},
+    {"_id":4,"weight":0.2,"_type":"edge","_outV":4,"_inV":5,"_label":"met"},
+    {"_id":5,"weight":0.8,"_type":"edge","_outV":4,"_inV":2,"_label":"texted"},
+    {"_id":6,"weight":0.9,"_type":"edge","_outV":6,"_inV":3,"_label":"worksfor"}
+
+  ],
+  "vertices" : [
+    {"_id":1,"name":"bob","age":34,"_type":"person"},
+    {"_id":2,"name":"alice","age":33,"_type":"person"},
+    {"_id":3,"name":"charlie","age":65,"_type":"person"},
+    {"_id":4,"name":"carlos","age":44,"_type":"person"},
+    {"_id":5,"name":"carol","age":37,"_type":"person"},
+    {"_id":6,"name":"erin","age":22,"_type":"person"}
+
+  ]
+}
