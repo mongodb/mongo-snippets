@@ -1,0 +1,18 @@
+{
+  "vertices":[
+    {"name":"bob","age":34,"_id":1,"_type":"person"},
+    {"name":"alice","age":33,"_id":2,"_type":"person"},
+    {"name":"charlie","age":65,"_id":3,"_type":"person"},
+    {"name":"carlos","age":44,"_id":4,"_type":"person"},
+    {"name":"carol","age":37,"_id":5,"_type":"person"},
+    {"name":"erin","age":22,"_id":6,"_type":"person"}
+  ],
+  "edges":[
+    {"weight":0.2,"_id":1,"_type":"edge","_outV":1,"_inV":2,"_label":"emailed"},
+    {"weight":1.0,"_id":2,"_type":"edge","_outV":1,"_inV":4,"_label":"called"},
+    {"weight":0.6,"_id":3,"_type":"edge","_outV":2,"_inV":3,"_label":"called"},
+    {"weight":0.2,"_id":4,"_type":"edge","_outV":4,"_inV":5,"_label":"met"},
+    {"weight":0.8,"_id":5,"_type":"edge","_outV":4,"_inV":2,"_label":"texted"},
+    {"weight":0.9,"_id":6,"_type":"edge","_outV":6,"_inV":3,"_label":"worksfor"}
+  ]
+}
