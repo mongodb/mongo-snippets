@@ -24,8 +24,8 @@ DB.prototype.getObjectCounts = function( collectionName ) {
 
     // get chunk bounds and sharding key pattern, both in the config db
     var cfg = this.getSisterDB( "config" );
-    var shardKeys = cfg.collections.findOne( { "_id": ns } , { key: 1 , _id: 0 } )["key"];
-    var chunks = cfg.chunks.find( { "ns": ns } , { _id: 0 , min: 1 , max: 1 , shard:1 } ).sort({ min:1 }).toArray();
+    var shardKeys = cfg.collections.findOne( { "_id": ns.toString() } , { key: 1 , _id: 0 } )["key"];
+    var chunks = cfg.chunks.find( { "ns": ns.toString() } , { _id: 0 , min: 1 , max: 1 , shard:1 } ).sort({ min:1 }).toArray();
 
     // get the object count for each chunk
     chunks.forEach(
@@ -55,7 +55,7 @@ DB.prototype.getObjectCounts = function( collectionName ) {
     print( "\n****************************************" );
     print( "\tto split a chunk manually:" );
     print( "\t> use admin" );
-    print( "\t> db.runCommand( { split : \"" + ns + "\" , find : " + tojson( chunks[0].min ) + " } )" );
+    print( "\t> db.runCommand( { split : \"" + ns.toString() + "\" , find : " + tojson( chunks[0].min ) + " } )" );
     print( );
 
     return { chunks : chunks , 
