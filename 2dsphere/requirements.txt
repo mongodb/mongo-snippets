@@ -1,4 +1,4 @@
-PyYAML==3.10
+PyYAML==5.4
 argparse==1.2.1
 pymongo==2.4.1
 simplejson==3.0.7
