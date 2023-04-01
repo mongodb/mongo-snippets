@@ -17,7 +17,8 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.8.11.1</version>
+<snyk-fix-l0cbwy>
+          <version>2.12.7.1</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
@@ -27,7 +28,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.2</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
